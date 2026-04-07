@@ -30,27 +30,38 @@ CRYPTO_PAY_TESTNET = False
 
 ADMIN_IDS = [964442694]
 MODERATORS_FILE = "moderators.json"
-
 USERS_FILE = "users_list.json"
 
 SUBSCRIPTIONS = {
-    "day": {
-        "reports": 2,
-        "duration_hours": 24,
-        "price": 1.99,
-        "emoji": "📅"
-    },
-    "week": {
-        "reports": 3,
+    "starter": {
+        "reports": 50,
         "duration_hours": 24,
         "price": 4.99,
-        "emoji": "📆"
+        "emoji": "🌟"
     },
-    "month": {
-        "reports": 5,
+    "standard": {
+        "reports": 120,
         "duration_hours": 24,
         "price": 9.99,
-        "emoji": "🗓️"
+        "emoji": "⭐"
+    },
+    "premium": {
+        "reports": 250,
+        "duration_hours": 24,
+        "price": 19.99,
+        "emoji": "👑"
+    },
+    "vip": {
+        "reports": 500,
+        "duration_hours": 24,
+        "price": 39.99,
+        "emoji": "💎"
+    },
+    "extreme": {
+        "reports": 1000,
+        "duration_hours": 24,
+        "price": 79.99,
+        "emoji": "🔥"
     }
 }
 
@@ -92,6 +103,7 @@ TEXTS = {
                    "👇 *Выберите действие в меню ниже:*",
         "profile": "👤 *Мой профиль*\n\n"
                    "🆔 ID: `{}`\n"
+                   "👑 Роль: {}\n"
                    "💥 Доступно сносов: *{}*\n"
                    "📊 Всего куплено: *{}*\n"
                    "📤 Всего использовано: *{}*\n\n"
@@ -109,7 +121,7 @@ TEXTS = {
         "confirm_report": "🎯 *Подтверждение сноса*\n\nЦель: @{}\nОстанется сносов: {}\n\n✅ Подтверждаете?",
         "report_success": "✅ *Снос выполнен!*\n\n🎯 Цель: @{}\n💥 Осталось сносов: {}\n\nРезультат: Успешно!",
         "no_reports_left": "❌ *Нет сносов!*\n\nКупите подписку или дополнительные сносы в магазине.",
-        "buy_subscription": "🛒 *Магазин - Подписки*\n\nВыберите подписку:",
+        "buy_subscription": "🛒 *Магазин - Подписки*\n\nВыберите подписку (все подписки действуют 24 часа):",
         "buy_extra": "🛒 *Магазин - Дополнительные сносы*\n\nВыберите пакет:",
         "purchase_success": "✅ *Покупка успешна!*\n\n📦 {}\n🎁 Получено: {} сносов\n💰 Цена: ${}\n\n💥 Всего сносов: {}",
         "history_empty": "📜 *История*\n\nУ вас пока нет операций.",
@@ -118,8 +130,11 @@ TEXTS = {
         "check_payment": "✅ Проверить оплату",
         "payment_error": "❌ Ошибка при создании счета: {}",
         "payment_not_found": "❌ Платеж не найден",
-        "sending_reports": "🚀 *Отправка жалоб*\n\n🎯 Цель: @{}\n📊 Прогресс: {}%\n┗━━━━━━━━━━━━━━━━━━━━┛\n█{}█\n\n⏳ Пожалуйста, подождите...",
-        "send_success": "✅ *Готово!*\n\n🎯 Цель: @{}\n📊 Отправлено жалоб: {}\n⏱️ Время: {}\n\n💥 Осталось сносов: {}"
+        "sending_reports": "🚀 *Отправка жалоб*\n\n🎯 Цель: @{}\n📊 Прогресс: {}%\n┗━━━━━━━━━━━━━━━━━━━━┛\n█{}█\n\n📨 Отправлено: {} / {}\n⏱️ Скорость: {} жалоб/сек\n\n⏳ Пожалуйста, подождите...",
+        "send_success": "✅ *Готово!*\n\n🎯 Цель: @{}\n📊 Отправлено жалоб: {}\n⏱️ Время: {}\n💥 Осталось сносов: {}",
+        "role_user": "👤 Пользователь",
+        "role_moder": "🛡️ Модератор",
+        "role_admin": "👑 Администратор"
     },
     "uk": {
         "welcome": "🌟 *Ласкаво просимо до Report Bot!* 🌟\n\n"
@@ -130,6 +145,7 @@ TEXTS = {
                    "👇 *Оберіть дію в меню нижче:*",
         "profile": "👤 *Мій профіль*\n\n"
                    "🆔 ID: `{}`\n"
+                   "👑 Роль: {}\n"
                    "💥 Доступно сносів: *{}*\n"
                    "📊 Всього куплено: *{}*\n"
                    "📤 Всього використано: *{}*\n\n"
@@ -147,7 +163,7 @@ TEXTS = {
         "confirm_report": "🎯 *Підтвердження сносу*\n\nЦіль: @{}\nЗалишиться сносів: {}\n\n✅ Підтверджуєте?",
         "report_success": "✅ *Снос виконано!*\n\n🎯 Ціль: @{}\n💥 Залишилось сносів: {}\n\nРезультат: Успішно!",
         "no_reports_left": "❌ *Немає сносів!*\n\nКупіть підписку або додаткові сноси в магазині.",
-        "buy_subscription": "🛒 *Магазин - Підписки*\n\nОберіть підписку:",
+        "buy_subscription": "🛒 *Магазин - Підписки*\n\nОберіть підписку (всі підписки діють 24 години):",
         "buy_extra": "🛒 *Магазин - Додаткові сноси*\n\nОберіть пакет:",
         "purchase_success": "✅ *Покупка успішна!*\n\n📦 {}\n🎁 Отримано: {} сносів\n💰 Ціна: ${}\n\n💥 Всього сносів: {}",
         "history_empty": "📜 *Історія*\n\nУ вас поки що немає операцій.",
@@ -156,8 +172,11 @@ TEXTS = {
         "check_payment": "✅ Перевірити оплату",
         "payment_error": "❌ Помилка при створенні рахунку: {}",
         "payment_not_found": "❌ Платіж не знайдено",
-        "sending_reports": "🚀 *Відправка скарг*\n\n🎯 Ціль: @{}\n📊 Прогрес: {}%\n┗━━━━━━━━━━━━━━━━━━━━┛\n█{}█\n\n⏳ Будь ласка, зачекайте...",
-        "send_success": "✅ *Готово!*\n\n🎯 Ціль: @{}\n📊 Відправлено скарг: {}\n⏱️ Час: {}\n\n💥 Залишилось сносів: {}"
+        "sending_reports": "🚀 *Відправка скарг*\n\n🎯 Ціль: @{}\n📊 Прогрес: {}%\n┗━━━━━━━━━━━━━━━━━━━━┛\n█{}█\n\n📨 Відправлено: {} / {}\n⏱️ Швидкість: {} скарг/сек\n\n⏳ Будь ласка, зачекайте...",
+        "send_success": "✅ *Готово!*\n\n🎯 Ціль: @{}\n📊 Відправлено скарг: {}\n⏱️ Час: {}\n💥 Залишилось сносів: {}",
+        "role_user": "👤 Користувач",
+        "role_moder": "🛡️ Модератор",
+        "role_admin": "👑 Адміністратор"
     },
     "en": {
         "welcome": "🌟 *Welcome to Report Bot!* 🌟\n\n"
@@ -168,6 +187,7 @@ TEXTS = {
                    "👇 *Choose an action in the menu below:*",
         "profile": "👤 *My profile*\n\n"
                    "🆔 ID: `{}`\n"
+                   "👑 Role: {}\n"
                    "💥 Available reports: *{}*\n"
                    "📊 Total purchased: *{}*\n"
                    "📤 Total used: *{}*\n\n"
@@ -185,7 +205,7 @@ TEXTS = {
         "confirm_report": "🎯 *Confirm report*\n\nTarget: @{}\nReports left: {}\n\n✅ Confirm?",
         "report_success": "✅ *Report completed!*\n\n🎯 Target: @{}\n💥 Reports left: {}\n\nResult: Success!",
         "no_reports_left": "❌ *No reports left!*\n\nBuy a subscription or extra reports in the shop.",
-        "buy_subscription": "🛒 *Shop - Subscriptions*\n\nChoose a subscription:",
+        "buy_subscription": "🛒 *Shop - Subscriptions*\n\nChoose a subscription (all subscriptions last 24 hours):",
         "buy_extra": "🛒 *Shop - Extra reports*\n\nChoose a package:",
         "purchase_success": "✅ *Purchase successful!*\n\n📦 {}\n🎁 Received: {} reports\n💰 Price: ${}\n\n💥 Total reports: {}",
         "history_empty": "📜 *History*\n\nNo transactions yet.",
@@ -194,8 +214,11 @@ TEXTS = {
         "check_payment": "✅ Check payment",
         "payment_error": "❌ Error creating invoice: {}",
         "payment_not_found": "❌ Payment not found",
-        "sending_reports": "🚀 *Sending reports*\n\n🎯 Target: @{}\n📊 Progress: {}%\n┗━━━━━━━━━━━━━━━━━━━━┛\n█{}█\n\n⏳ Please wait...",
-        "send_success": "✅ *Done!*\n\n🎯 Target: @{}\n📊 Reports sent: {}\n⏱️ Time: {}\n\n💥 Reports left: {}"
+        "sending_reports": "🚀 *Sending reports*\n\n🎯 Target: @{}\n📊 Progress: {}%\n┗━━━━━━━━━━━━━━━━━━━━┛\n█{}█\n\n📨 Sent: {} / {}\n⏱️ Speed: {} reports/sec\n\n⏳ Please wait...",
+        "send_success": "✅ *Done!*\n\n🎯 Target: @{}\n📊 Reports sent: {}\n⏱️ Time: {}\n💥 Reports left: {}",
+        "role_user": "👤 User",
+        "role_moder": "🛡️ Moderator",
+        "role_admin": "👑 Administrator"
     }
 }
 
@@ -208,6 +231,14 @@ def load_moderators():
 def save_moderators(moderators):
     with open(MODERATORS_FILE, 'w', encoding='utf-8') as f:
         json.dump(moderators, f, ensure_ascii=False, indent=2)
+
+def get_user_role(user_id: int) -> str:
+    if user_id in ADMIN_IDS:
+        return "admin"
+    elif user_id in load_moderators():
+        return "moder"
+    else:
+        return "user"
 
 def is_admin_or_moderator(user_id: int) -> bool:
     if user_id in ADMIN_IDS:
@@ -488,7 +519,7 @@ def get_active_subscription_text(user_id: int) -> str:
     if not sub:
         return get_text(user_id, "no_active_subs")
     
-    sub_names = {"day": "📅", "week": "📆", "month": "🗓️"}
+    sub_names = {"starter": "🌟", "standard": "⭐", "premium": "👑", "vip": "💎", "extreme": "🔥"}
     end_date = datetime.strptime(sub['end_date'], '%Y-%m-%d %H:%M:%S.%f').strftime('%d.%m.%Y %H:%M')
     
     return f"• {sub_names.get(sub['sub_type'], '❓')} до {end_date} ({sub['reports_limit']} сносів)"
@@ -509,7 +540,6 @@ def is_valid_username(username: str) -> bool:
     return 3 <= len(username) <= 32 and not re.search(r'[\s<>{}[\]\\]', username)
 
 async def get_main_keyboard(user_id: int) -> InlineKeyboardMarkup:
-    user = db.get_user(user_id)
     buttons = [
         [InlineKeyboardButton(get_text(user_id, "btn_shop"), callback_data="action_shop")],
         [InlineKeyboardButton(get_text(user_id, "btn_profile"), callback_data="action_profile")],
@@ -672,9 +702,10 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     if data == "action_profile":
         user = db.get_user(user_id)
+        role = get_text(user_id, f"role_{get_user_role(user_id)}")
         sub_text = get_active_subscription_text(user_id)
         await query.edit_message_text(
-            get_text(user_id, "profile", user_id, user['reports'], user['total_purchased'], user['total_used'], sub_text),
+            get_text(user_id, "profile", user_id, role, user['reports'], user['total_purchased'], user['total_used'], sub_text),
             parse_mode="Markdown",
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton(get_text(user_id, "btn_history"), callback_data="action_history")],
@@ -722,8 +753,9 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     if data == "action_my_reports":
         user = db.get_user(user_id)
+        role = get_text(user_id, f"role_{get_user_role(user_id)}")
         await query.edit_message_text(
-            get_text(user_id, "profile", user_id, user['reports'], user['total_purchased'], user['total_used'], get_active_subscription_text(user_id)),
+            get_text(user_id, "profile", user_id, role, user['reports'], user['total_purchased'], user['total_used'], get_active_subscription_text(user_id)),
             parse_mode="Markdown",
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton(get_text(user_id, "btn_back"), callback_data="action_profile")]
@@ -780,6 +812,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         users_list = load_users_list()
         users_data = db.get_all_users_data()
+        moderators = load_moderators()
         
         if not users_list:
             text = "📊 *Список пользователей*\n\nПользователей нет"
@@ -792,7 +825,15 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 name = u.get('username') or u.get('first_name') or str(uid)
                 user_data = next((x for x in users_data if str(x['user_id']) == str(uid)), None)
                 reports = user_data['reports'] if user_data else 0
-                text += f"• ID: `{uid}` | {name} | 💥 {reports}\n"
+                
+                if int(uid) in ADMIN_IDS:
+                    role_icon = "👑"
+                elif int(uid) in moderators:
+                    role_icon = "🛡️"
+                else:
+                    role_icon = "👤"
+                
+                text += f"• {role_icon} `{uid}` | {name} | 💥 {reports}\n"
                 count += 1
             text += f"\nВсего: {len(users_list)}"
         
@@ -813,6 +854,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         users_data = db.get_all_users_data()
         users_list = load_users_list()
+        moderators = load_moderators()
         total_reports = sum(u['reports'] for u in users_data)
         total_purchased = sum(u['total_purchased'] for u in users_data)
         total_used = sum(u['total_used'] for u in users_data)
@@ -820,6 +862,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.reply_text(
             f"📈 *Статистика*\n\n"
             f"👥 Пользователей: {len(users_list)}\n"
+            f"👑 Администраторов: {len(ADMIN_IDS)}\n"
+            f"🛡️ Модераторов: {len(moderators)}\n"
             f"💥 Всего сносов: {total_reports}\n"
             f"📥 Куплено: {total_purchased}\n"
             f"📤 Использовано: {total_used}",
@@ -902,12 +946,12 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
         
         if db.use_report(user_id, target):
+            context.user_data.pop("target_for_report", None)
             await query.edit_message_text(
                 get_text(user_id, "report_success", target, db.get_user(user_id)['reports']),
                 parse_mode="Markdown",
                 reply_markup=await get_main_keyboard(user_id)
             )
-            context.user_data.pop("target_for_report", None)
         else:
             await query.edit_message_text(
                 get_text(user_id, "no_reports_left"),
@@ -949,7 +993,7 @@ async def create_payment_invoice(update, query, user_id: int, item_type: str, it
             reply_markup=await get_shop_keyboard(user_id)
         )
 
-async def check_payment_and_activate(update: Update, query, user_id: int, invoice_id: int):
+async def check_payment_and_activate(update, query, user_id: int, invoice_id: int):
     session = db.get_payment_session(user_id)
     
     if not session or session['invoice_id'] != invoice_id:
@@ -963,7 +1007,7 @@ async def check_payment_and_activate(update: Update, query, user_id: int, invoic
             if invoice.get('status') == 'paid':
                 if session['item_type'] == 'subscription':
                     sub = SUBSCRIPTIONS[session['item_key']]
-                    sub_names = {"day": "Дневная", "week": "Недельная", "month": "Месячная"}
+                    sub_names = {"starter": "Starter", "standard": "Standard", "premium": "Premium", "vip": "VIP", "extreme": "Extreme"}
                     sub_name = sub_names.get(session['item_key'], session['item_key'])
                     db.add_subscription(user_id, session['item_key'], sub['reports'], sub['duration_hours'])
                     db.add_reports(user_id, sub['reports'], "subscription", sub_name, session['amount'])
@@ -994,35 +1038,48 @@ async def check_payment_and_activate(update: Update, query, user_id: int, invoic
         await query.answer(f"Ошибка: {str(e)}", show_alert=True)
 
 async def send_reports_with_animation(update, user_id: int, target: str, bot):
+    min_reports = random.randint(26, 56)
+    max_reports = random.randint(226, 359)
+    total = random.randint(min_reports, max_reports)
+    
     status_msg = await bot.send_message(
         user_id,
-        get_text(user_id, "sending_reports", target, 0, "░░░░░░░░░░░░░░░░░░░░"),
+        get_text(user_id, "sending_reports", target, 0, "░░░░░░░░░░░░░░░░░░░░", 0, total, 0),
         parse_mode="Markdown"
     )
     
-    total = random.randint(50, 100)
-    step = total // 20
+    sent = 0
+    start_time = time.time()
     
-    for i in range(1, 21):
-        progress = i * 5
-        filled = "█" * i
-        empty = "░" * (20 - i)
-        await asyncio.sleep(random.uniform(0.3, 0.5))
+    while sent < total:
+        batch = random.randint(26, 56)
+        if sent + batch > total:
+            batch = total - sent
+        
+        sent += batch
+        progress = int(20 * sent / total)
+        filled = "█" * progress
+        empty = "░" * (20 - progress)
+        percent = int(100 * sent / total)
+        
+        elapsed = time.time() - start_time
+        speed = int(sent / elapsed) if elapsed > 0 else 0
+        
         try:
             await status_msg.edit_text(
-                get_text(user_id, "sending_reports", target, progress, filled + empty),
+                get_text(user_id, "sending_reports", target, percent, filled + empty, sent, total, speed),
                 parse_mode="Markdown"
             )
         except:
             pass
+        
+        await asyncio.sleep(1)
     
-    await asyncio.sleep(1)
-    
-    elapsed = random.randint(8, 15)
+    elapsed_time = int(time.time() - start_time)
     user = db.get_user(user_id)
     
     await status_msg.edit_text(
-        get_text(user_id, "send_success", target, total, f"{elapsed} сек", user['reports']),
+        get_text(user_id, "send_success", target, total, f"{elapsed_time} сек", user['reports']),
         parse_mode="Markdown"
     )
 
