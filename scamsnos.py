@@ -1,8 +1,9 @@
 """
-Telegram Bot with Balance System + Crypto Pay + Admin Panel
+Telegram Bot with Subscription System + Report Services
+Подписки: дни, недели, месяцы
+Валюта: сносы (reports)
 ВСЕ КНОПКИ РАБОТАЮТ
 Поддержка языков: Українська, Русский, English
-Адаптирован для Railway
 """
 
 import asyncio
@@ -31,42 +32,143 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # ==================== КОНФИГУРАЦИЯ ====================
-# Берем токены из переменных окружения Railway
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "8796055769:AAG1DRlpWd7Zft4oGb0_A8309qJgM3UOf3M")
 CRYPTO_PAY_TOKEN = os.environ.get("CRYPTO_PAY_TOKEN", "563714:AAoNQWxKCzZLDkotn5jjJdl0QFwMCAtEbtD")
 CRYPTO_PAY_TESTNET = False
 
 ADMIN_IDS = [964442694]
 
-# Пакеты услуг
-PACKAGES = {
-    "basic": {
-        "price": 2.99,
-        "claims_min": 90,
-        "claims_max": 100,
-        "success_rate": 60,
-        "emoji": "💎"
+# Пакеты подписок
+SUBSCRIPTIONS = {
+    "day": {
+        "name": "Дневная подписка",
+        "reports": 2,  # количество сносов в день
+        "duration_days": 1,
+        "price": 1.99,
+        "emoji": "📅"
     },
-    "pro": {
-        "price": 6.99,
-        "claims_min": 150,
-        "claims_max": 200,
-        "success_rate": 85,
-        "emoji": "🔥"
+    "week": {
+        "name": "Недельная подписка", 
+        "reports": 3,  # количество сносов в неделю
+        "duration_days": 7,
+        "price": 4.99,
+        "emoji": "📆"
     },
-    "vip": {
+    "month": {
+        "name": "Месячная подписка",
+        "reports": 5,  # количество сносов в месяц
+        "duration_days": 30,
         "price": 9.99,
-        "claims_min": 250,
-        "claims_max": 300,
-        "success_rate": 100,
-        "emoji": "👑"
+        "emoji": "🗓️"
     }
 }
 
-# ... (остальные TEXTS, Database, CryptoPayClient - без изменений) ...
+# Дополнительные услуги (пакеты сносов)
+EXTRA_REPORTS = {
+    "single": {
+        "name": "1 снос",
+        "reports": 1,
+        "price": 2.00,
+        "emoji": "🎯"
+    },
+    "five": {
+        "name": "5 сносов",
+        "reports": 5,
+        "price": 10.00,
+        "emoji": "🔥"
+    }
+}
 
-# Для краткости я не копирую весь TEXTS сюда, но вы можете оставить его как есть
-# Вставьте сюда все ваши TEXTS из предыдущего кода
+# Тексты на разных языках
+TEXTS = {
+    "ru": {
+        "start": "🔥 *Привет, {}!* 🔥\n\nДобро пожаловать в сервис сносов!\n\n👇 *Выберите действие:*",
+        "balance": "📊 *Мои сносы*\n\nДоступно: *{}* сносов\n\nАктивные подписки:\n{}",
+        "btn_subscriptions": "🎫 Подписки",
+        "btn_extra_reports": "⚡ Доп. сносы",
+        "btn_my_reports": "📊 Мои сносы",
+        "btn_history": "📜 История",
+        "btn_language": "🌐 Сменить язык",
+        "btn_back": "🔙 Главное меню",
+        "no_active_subs": "Нет активных подписок",
+        "subscription_expired": "⚠️ Ваша подписка истекла!",
+        "report_used": "✅ Использован 1 снос на @{}\nОсталось сносов: {}",
+        "no_reports_left": "❌ У вас закончились сносы!\nКупите подписку или дополнительные сносы.",
+        "target_username": "📝 *Введите username цели:*\n\nПример: @username или t.me/username",
+        "confirm_report": "🎯 *Подтверждение сноса*\n\nЦель: @{}\nОстанется сносов: {}\n\n✅ Подтверждаете?",
+        "report_success": "✅ *Снос выполнен!*\n\n🎯 Цель: @{}\n💥 Использовано сносов: 1\n📊 Осталось: {}\n\nРезультат: {}",
+        "buy_subscription": "🎫 *Выберите подписку:*",
+        "buy_extra": "⚡ *Выберите пакет дополнительных сносов:*",
+        "purchase_success": "✅ *Покупка успешна!*\n\n📦 {}\n🎁 Получено сносов: {}\n💰 Цена: ${}\n\n📊 Всего сносов: {}",
+        "history_empty": "📜 *История*\n\nУ вас пока нет операций.",
+        "history": "📜 *История операций*\n\n{}",
+        "sub_active": "✅ *Активная подписка*\n\nТип: {}\nДействует до: {}\nДоступно сносов в период: {}",
+        "crypto_payment": "🧾 *Оплата через CryptoPay*\n\n💰 Сумма: ${}\n🆔 Invoice: `{}`\n\nПосле оплаты нажмите «Проверить»",
+        "check_payment": "🔄 Проверить оплату",
+        "payment_success": "✅ *Оплата подтверждена!*\n\nТовар активирован!",
+        "payment_wait": "⏳ Ожидаем оплату...\nСчет действителен 30 минут.",
+        "payment_error": "❌ Ошибка при создании счета: {}",
+        "payment_not_found": "❌ Платеж не найден или еще не оплачен",
+    },
+    "uk": {
+        "start": "🔥 *Вітаю, {}!* 🔥\n\nЛаскаво просимо до сервісу сносів!\n\n👇 *Оберіть дію:*",
+        "balance": "📊 *Мої сноси*\n\nДоступно: *{}* сносів\n\nАктивні підписки:\n{}",
+        "btn_subscriptions": "🎫 Підписки",
+        "btn_extra_reports": "⚡ Дод. сноси",
+        "btn_my_reports": "📊 Мої сноси",
+        "btn_history": "📜 Історія",
+        "btn_language": "🌐 Змінити мову",
+        "btn_back": "🔙 Головне меню",
+        "no_active_subs": "Немає активних підписок",
+        "subscription_expired": "⚠️ Ваша підписка закінчилася!",
+        "report_used": "✅ Використано 1 снос на @{}\nЗалишилось сносів: {}",
+        "no_reports_left": "❌ У вас закінчилися сноси!\nКупіть підписку або додаткові сноси.",
+        "target_username": "📝 *Введіть username цілі:*\n\nПриклад: @username або t.me/username",
+        "confirm_report": "🎯 *Підтвердження сносу*\n\nЦіль: @{}\nЗалишиться сносів: {}\n\n✅ Підтверджуєте?",
+        "report_success": "✅ *Снос виконано!*\n\n🎯 Ціль: @{}\n💥 Використано сносів: 1\n📊 Залишилось: {}\n\nРезультат: {}",
+        "buy_subscription": "🎫 *Оберіть підписку:*",
+        "buy_extra": "⚡ *Оберіть пакет додаткових сносів:*",
+        "purchase_success": "✅ *Покупка успішна!*\n\n📦 {}\n🎁 Отримано сносів: {}\n💰 Ціна: ${}\n\n📊 Всього сносів: {}",
+        "history_empty": "📜 *Історія*\n\nУ вас поки що немає операцій.",
+        "history": "📜 *Історія операцій*\n\n{}",
+        "sub_active": "✅ *Активна підписка*\n\nТип: {}\nДіє до: {}\nДоступно сносів у період: {}",
+        "crypto_payment": "🧾 *Оплата через CryptoPay*\n\n💰 Сума: ${}\n🆔 Invoice: `{}`\n\nПісля оплати натисніть «Перевірити»",
+        "check_payment": "🔄 Перевірити оплату",
+        "payment_success": "✅ *Оплата підтверджена!*\n\nТовар активовано!",
+        "payment_wait": "⏳ Очікуємо оплату...\nРахунок дійсний 30 хвилин.",
+        "payment_error": "❌ Помилка при створенні рахунку: {}",
+        "payment_not_found": "❌ Платіж не знайдено або ще не оплачений",
+    },
+    "en": {
+        "start": "🔥 *Hello, {}!* 🔥\n\nWelcome to the report service!\n\n👇 *Choose an action:*",
+        "balance": "📊 *My reports*\n\nAvailable: *{}* reports\n\nActive subscriptions:\n{}",
+        "btn_subscriptions": "🎫 Subscriptions",
+        "btn_extra_reports": "⚡ Extra reports",
+        "btn_my_reports": "📊 My reports",
+        "btn_history": "📜 History",
+        "btn_language": "🌐 Change language",
+        "btn_back": "🔙 Main menu",
+        "no_active_subs": "No active subscriptions",
+        "subscription_expired": "⚠️ Your subscription has expired!",
+        "report_used": "✅ Used 1 report on @{}\nReports left: {}",
+        "no_reports_left": "❌ You have no reports left!\nBuy a subscription or extra reports.",
+        "target_username": "📝 *Enter target username:*\n\nExample: @username or t.me/username",
+        "confirm_report": "🎯 *Confirm report*\n\nTarget: @{}\nReports left: {}\n\n✅ Confirm?",
+        "report_success": "✅ *Report completed!*\n\n🎯 Target: @{}\n💥 Reports used: 1\n📊 Left: {}\n\nResult: {}",
+        "buy_subscription": "🎫 *Choose subscription:*",
+        "buy_extra": "⚡ *Choose extra reports package:*",
+        "purchase_success": "✅ *Purchase successful!*\n\n📦 {}\n🎁 Reports received: {}\n💰 Price: ${}\n\n📊 Total reports: {}",
+        "history_empty": "📜 *History*\n\nNo transactions yet.",
+        "history": "📜 *Transaction history*\n\n{}",
+        "sub_active": "✅ *Active subscription*\n\nType: {}\nValid until: {}\nReports available in period: {}",
+        "crypto_payment": "🧾 *Payment via CryptoPay*\n\n💰 Amount: ${}\n🆔 Invoice: `{}`\n\nAfter payment click «Check»",
+        "check_payment": "🔄 Check payment",
+        "payment_success": "✅ *Payment confirmed!*\n\nProduct activated!",
+        "payment_wait": "⏳ Waiting for payment...\nInvoice valid for 30 minutes.",
+        "payment_error": "❌ Error creating invoice: {}",
+        "payment_not_found": "❌ Payment not found or not paid yet",
+    }
+}
 
 # ==================== БАЗА ДАННЫХ ====================
 class Database:
@@ -78,53 +180,67 @@ class Database:
         with sqlite3.connect(self.db_name) as conn:
             cursor = conn.cursor()
             
+            # Основная таблица пользователей
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS users (
                     user_id INTEGER PRIMARY KEY,
                     username TEXT,
                     first_name TEXT,
                     last_name TEXT,
-                    balance REAL DEFAULT 0,
-                    total_deposits REAL DEFAULT 0,
-                    total_spent REAL DEFAULT 0,
+                    reports INTEGER DEFAULT 0,
+                    total_purchased INTEGER DEFAULT 0,
+                    total_used INTEGER DEFAULT 0,
                     registered_at TIMESTAMP,
                     status TEXT DEFAULT 'active',
                     language TEXT DEFAULT 'ru'
                 )
             """)
             
+            # Таблица подписок
             cursor.execute("""
-                CREATE TABLE IF NOT EXISTS deposits (
-                    deposit_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    user_id INTEGER,
-                    invoice_id INTEGER,
-                    amount REAL,
-                    asset TEXT,
-                    status TEXT,
-                    created_at TIMESTAMP,
-                    paid_at TIMESTAMP
+                CREATE TABLE IF NOT EXISTS subscriptions (
+                    user_id INTEGER PRIMARY KEY,
+                    sub_type TEXT,
+                    reports_limit INTEGER,
+                    reports_used INTEGER DEFAULT 0,
+                    start_date TIMESTAMP,
+                    end_date TIMESTAMP,
+                    active INTEGER DEFAULT 1,
+                    FOREIGN KEY (user_id) REFERENCES users (user_id)
                 )
             """)
             
+            # Таблица покупок
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS purchases (
                     purchase_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     user_id INTEGER,
-                    package_name TEXT,
-                    target TEXT,
-                    claims_count INTEGER,
-                    success_rate INTEGER,
+                    item_type TEXT,
+                    item_name TEXT,
+                    reports_added INTEGER,
                     price REAL,
                     purchased_at TIMESTAMP
                 )
             """)
             
+            # Таблица операций (использование сносов)
             cursor.execute("""
-                CREATE TABLE IF NOT EXISTS deposit_sessions (
+                CREATE TABLE IF NOT EXISTS report_usage (
+                    usage_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER,
+                    target TEXT,
+                    used_at TIMESTAMP
+                )
+            """)
+            
+            # Таблица платежных сессий
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS payment_sessions (
                     user_id INTEGER PRIMARY KEY,
                     invoice_id INTEGER,
+                    item_type TEXT,
+                    item_key TEXT,
                     amount REAL,
-                    asset TEXT,
                     created_at TIMESTAMP,
                     expires_at TIMESTAMP
                 )
@@ -154,7 +270,7 @@ class Database:
         with sqlite3.connect(self.db_name) as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
-            cursor.execute("SELECT user_id, username, first_name, balance, total_deposits, total_spent, language FROM users ORDER BY balance DESC")
+            cursor.execute("SELECT user_id, username, first_name, reports, total_purchased, total_used, language FROM users ORDER BY reports DESC")
             return [dict(row) for row in cursor.fetchall()]
     
     def create_user(self, user_id: int, username: str = None, first_name: str = None, last_name: str = None, language: str = 'ru') -> dict:
@@ -162,9 +278,9 @@ class Database:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
             cursor.execute("""
-                INSERT INTO users (user_id, username, first_name, last_name, balance, registered_at, language)
+                INSERT INTO users (user_id, username, first_name, last_name, reports, registered_at, language)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (user_id, username, first_name, last_name, 0.0, datetime.now(), language))
+            """, (user_id, username, first_name, last_name, 0, datetime.now(), language))
             conn.commit()
             cursor.execute("SELECT * FROM users WHERE user_id = ?", (user_id,))
             return dict(cursor.fetchone())
@@ -182,85 +298,70 @@ class Database:
             cursor.execute("UPDATE users SET language = ? WHERE user_id = ?", (language, user_id))
             conn.commit()
     
-    def update_balance(self, user_id: int, amount: float, operation: str = "add"):
+    def add_reports(self, user_id: int, amount: int, purchase_type: str, item_name: str, price: float):
         with sqlite3.connect(self.db_name) as conn:
             cursor = conn.cursor()
-            if operation == "add":
-                cursor.execute("UPDATE users SET balance = balance + ?, total_deposits = total_deposits + ? WHERE user_id = ?", 
-                               (amount, amount, user_id))
-            elif operation == "subtract":
-                cursor.execute("UPDATE users SET balance = balance - ?, total_spent = total_spent + ? WHERE user_id = ?", 
-                               (amount, amount, user_id))
-            elif operation == "set":
-                cursor.execute("UPDATE users SET balance = ? WHERE user_id = ?", (amount, user_id))
-            conn.commit()
-    
-    def set_balance_direct(self, user_id: int, new_balance: float):
-        with sqlite3.connect(self.db_name) as conn:
-            cursor = conn.cursor()
-            cursor.execute("UPDATE users SET balance = ? WHERE user_id = ?", (new_balance, user_id))
-            conn.commit()
-    
-    def add_deposit(self, user_id: int, invoice_id: int, amount: float, asset: str, status: str = "pending") -> int:
-        with sqlite3.connect(self.db_name) as conn:
-            cursor = conn.cursor()
+            # Обновляем баланс сносов
+            cursor.execute("UPDATE users SET reports = reports + ?, total_purchased = total_purchased + ? WHERE user_id = ?", 
+                          (amount, amount, user_id))
+            # Добавляем запись о покупке
             cursor.execute("""
-                INSERT INTO deposits (user_id, invoice_id, amount, asset, status, created_at)
+                INSERT INTO purchases (user_id, item_type, item_name, reports_added, price, purchased_at)
                 VALUES (?, ?, ?, ?, ?, ?)
-            """, (user_id, invoice_id, amount, asset, status, datetime.now()))
-            deposit_id = cursor.lastrowid
+            """, (user_id, purchase_type, item_name, amount, price, datetime.now()))
             conn.commit()
-            return deposit_id
     
-    def update_deposit_status(self, invoice_id: int, status: str):
+    def use_report(self, user_id: int, target: str) -> bool:
         with sqlite3.connect(self.db_name) as conn:
             cursor = conn.cursor()
-            paid_at = datetime.now() if status == "paid" else None
-            cursor.execute("""
-                UPDATE deposits SET status = ?, paid_at = ?
-                WHERE invoice_id = ?
-            """, (status, paid_at, invoice_id))
             
-            if status == "paid":
-                cursor.execute("SELECT user_id, amount FROM deposits WHERE invoice_id = ?", (invoice_id,))
-                deposit = cursor.fetchone()
-                if deposit:
-                    self.update_balance(deposit[0], deposit[1], "add")
-            conn.commit()
-    
-    def save_deposit_session(self, user_id: int, invoice_id: int, amount: float, asset: str, expires_in: int = 3600):
-        with sqlite3.connect(self.db_name) as conn:
-            cursor = conn.cursor()
-            expires_at = datetime.now() + timedelta(seconds=expires_in)
+            # Проверяем есть ли сносы
+            cursor.execute("SELECT reports FROM users WHERE user_id = ?", (user_id,))
+            result = cursor.fetchone()
+            if not result or result[0] <= 0:
+                return False
+            
+            # Уменьшаем количество сносов
+            cursor.execute("UPDATE users SET reports = reports - 1, total_used = total_used + 1 WHERE user_id = ?", (user_id,))
+            
+            # Записываем использование
             cursor.execute("""
-                INSERT OR REPLACE INTO deposit_sessions (user_id, invoice_id, amount, asset, created_at, expires_at)
-                VALUES (?, ?, ?, ?, ?, ?)
-            """, (user_id, invoice_id, amount, asset, datetime.now(), expires_at))
+                INSERT INTO report_usage (user_id, target, used_at)
+                VALUES (?, ?, ?)
+            """, (user_id, target, datetime.now()))
+            
             conn.commit()
+            return True
     
-    def get_deposit_session(self, user_id: int) -> Optional[dict]:
+    def get_active_subscription(self, user_id: int) -> Optional[dict]:
         with sqlite3.connect(self.db_name) as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
             cursor.execute("""
-                SELECT * FROM deposit_sessions WHERE user_id = ? AND expires_at > ?
+                SELECT * FROM subscriptions 
+                WHERE user_id = ? AND active = 1 AND end_date > ?
             """, (user_id, datetime.now()))
-            session = cursor.fetchone()
-            return dict(session) if session else None
+            sub = cursor.fetchone()
+            return dict(sub) if sub else None
     
-    def delete_deposit_session(self, user_id: int):
+    def add_subscription(self, user_id: int, sub_type: str, reports_limit: int, duration_days: int):
         with sqlite3.connect(self.db_name) as conn:
             cursor = conn.cursor()
-            cursor.execute("DELETE FROM deposit_sessions WHERE user_id = ?", (user_id,))
-            conn.commit()
-    
-    def add_purchase(self, user_id: int, package_name: str, target: str, claims_count: int, success_rate: int, price: float):
-        with sqlite3.connect(self.db_name) as conn:
-            cursor = conn.cursor()
+            
+            # Деактивируем старую подписку
+            cursor.execute("UPDATE subscriptions SET active = 0 WHERE user_id = ?", (user_id,))
+            
+            # Создаем новую
+            start_date = datetime.now()
+            end_date = start_date + timedelta(days=duration_days)
             cursor.execute("""
-                INSERT INTO purchases (user_id, package_name, target, claims_count, success_rate, price, purchased_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (user_id, package_name, target, claims_count, success_rate, price, datetime.now()))
+                INSERT OR REPLACE INTO subscriptions (user_id, sub_type, reports_limit, reports_used, start_date, end_date, active)
+                VALUES (?, ?, ?, 0, ?, ?, 1)
+            """, (user_id, sub_type, reports_limit, start_date, end_date))
+            
+            # Добавляем сносы
+            cursor.execute("UPDATE users SET reports = reports + ? WHERE user_id = ?", (reports_limit, user_id))
+            
             conn.commit()
     
     def get_user_purchases(self, user_id: int, limit: int = 10) -> List[dict]:
@@ -271,6 +372,47 @@ class Database:
                 SELECT * FROM purchases WHERE user_id = ? ORDER BY purchased_at DESC LIMIT ?
             """, (user_id, limit))
             return [dict(row) for row in cursor.fetchall()]
+    
+    def get_user_usage(self, user_id: int, limit: int = 10) -> List[dict]:
+        with sqlite3.connect(self.db_name) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT * FROM report_usage WHERE user_id = ? ORDER BY used_at DESC LIMIT ?
+            """, (user_id, limit))
+            return [dict(row) for row in cursor.fetchall()]
+    
+    def save_payment_session(self, user_id: int, invoice_id: int, item_type: str, item_key: str, amount: float, expires_in: int = 1800):
+        with sqlite3.connect(self.db_name) as conn:
+            cursor = conn.cursor()
+            expires_at = datetime.now() + timedelta(seconds=expires_in)
+            cursor.execute("""
+                INSERT OR REPLACE INTO payment_sessions (user_id, invoice_id, item_type, item_key, amount, created_at, expires_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (user_id, invoice_id, item_type, item_key, amount, datetime.now(), expires_at))
+            conn.commit()
+    
+    def get_payment_session(self, user_id: int) -> Optional[dict]:
+        with sqlite3.connect(self.db_name) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT * FROM payment_sessions WHERE user_id = ? AND expires_at > ?
+            """, (user_id, datetime.now()))
+            session = cursor.fetchone()
+            return dict(session) if session else None
+    
+    def delete_payment_session(self, user_id: int):
+        with sqlite3.connect(self.db_name) as conn:
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM payment_sessions WHERE user_id = ?", (user_id,))
+            conn.commit()
+    
+    def set_reports_direct(self, user_id: int, new_reports: int):
+        with sqlite3.connect(self.db_name) as conn:
+            cursor = conn.cursor()
+            cursor.execute("UPDATE users SET reports = ? WHERE user_id = ?", (new_reports, user_id))
+            conn.commit()
 
 db = Database()
 
@@ -293,7 +435,7 @@ class CryptoPayClient:
                     raise Exception(f"Crypto Pay error: {result.get('error')}")
                 return result["result"]
     
-    async def create_invoice(self, asset: str, amount: str, description: str = None, payload: str = None, expires_in: int = 3600) -> dict:
+    async def create_invoice(self, asset: str, amount: str, description: str = None, payload: str = None, expires_in: int = 1800) -> dict:
         params = {"asset": asset, "amount": str(amount), "expires_in": expires_in}
         if description:
             params["description"] = description
@@ -313,27 +455,25 @@ crypto_client = CryptoPayClient(CRYPTO_PAY_TOKEN, testnet=CRYPTO_PAY_TESTNET)
 def get_text(user_id: int, key: str, *args) -> str:
     user = db.get_user(user_id)
     lang = user['language'] if user else 'ru'
-    # Упрощенная версия - для полной функциональности нужно добавить все TEXTS
-    texts = {
-        "ru": {
-            "start": "🔥 *Привет, {}!* 🔥\n\nДобро пожаловать в сервис массовых жалоб!\n\n👇 *Выберите действие:*",
-            "balance": "💰 *Ваш баланс*\n\nДоступно: *${:.2f}*",
-            "btn_deposit": "💰 Пополнить баланс",
-            "btn_buy": "🛒 Купить услугу",
-            "btn_balance": "📊 Мой баланс",
-            "btn_history": "📜 История покупок",
-            "btn_language": "🌐 Сменить язык",
-            "btn_back": "🔙 Главное меню",
-        }
-    }
-    text = texts.get(lang, texts['ru']).get(key, "Ошибка")
+    text = TEXTS.get(lang, TEXTS['ru']).get(key, "Ошибка")
     if args:
         return text.format(*args)
     return text
 
-def get_package_name(user_id: int, package_id: str) -> str:
-    names = {"basic": "Базовый", "pro": "Pro", "vip": "VIP"}
-    return names.get(package_id, package_id)
+def get_active_subscription_text(user_id: int) -> str:
+    sub = db.get_active_subscription(user_id)
+    if not sub:
+        return get_text(user_id, "no_active_subs")
+    
+    sub_names = {
+        "day": get_text(user_id, "sub_day") if "sub_day" in TEXTS[db.get_user(user_id)['language']] else "Дневная",
+        "week": "Недельная",
+        "month": "Месячная"
+    }
+    end_date = datetime.strptime(sub['end_date'], '%Y-%m-%d %H:%M:%S.%f').strftime('%d.%m.%Y')
+    remaining = sub['reports_limit'] - sub['reports_used']
+    
+    return f"• {sub_names.get(sub['sub_type'], sub['sub_type'])}: до {end_date} ({remaining}/{sub['reports_limit']} сносов)"
 
 def extract_username(text: str) -> str:
     text = text.strip()
@@ -358,29 +498,32 @@ def is_valid_username(username: str) -> bool:
 # ==================== КЛАВИАТУРЫ ====================
 async def get_main_keyboard(user_id: int) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton(get_text(user_id, "btn_deposit"), callback_data="action_deposit")],
-        [InlineKeyboardButton(get_text(user_id, "btn_buy"), callback_data="action_buy_service")],
-        [InlineKeyboardButton(get_text(user_id, "btn_balance"), callback_data="action_my_balance")],
+        [InlineKeyboardButton(get_text(user_id, "btn_subscriptions"), callback_data="action_subscriptions")],
+        [InlineKeyboardButton(get_text(user_id, "btn_extra_reports"), callback_data="action_extra_reports")],
+        [InlineKeyboardButton(get_text(user_id, "btn_my_reports"), callback_data="action_my_reports")],
         [InlineKeyboardButton(get_text(user_id, "btn_history"), callback_data="action_history")],
         [InlineKeyboardButton(get_text(user_id, "btn_language"), callback_data="action_language")]
     ])
 
-async def get_deposit_amounts_keyboard(user_id: int) -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup([
-        [InlineKeyboardButton("💵 $5", callback_data="deposit_5"), InlineKeyboardButton("💵 $10", callback_data="deposit_10")],
-        [InlineKeyboardButton("💵 $20", callback_data="deposit_20"), InlineKeyboardButton("💵 $50", callback_data="deposit_50")],
-        [InlineKeyboardButton("💰 Своя сумма", callback_data="deposit_custom")],
-        [InlineKeyboardButton(get_text(user_id, "btn_back"), callback_data="action_back_to_main")]
-    ])
-
-async def get_packages_keyboard(user_id: int) -> InlineKeyboardMarkup:
+async def get_subscriptions_keyboard(user_id: int) -> InlineKeyboardMarkup:
     keyboard = []
-    for pkg_id, pkg in PACKAGES.items():
-        pkg_name = get_package_name(user_id, pkg_id)
+    for sub_id, sub in SUBSCRIPTIONS.items():
         keyboard.append([
             InlineKeyboardButton(
-                f"{pkg['emoji']} {pkg_name} - ${pkg['price']}",
-                callback_data=f"package_{pkg_id}"
+                f"{sub['emoji']} {sub['name']} - ${sub['price']} ({sub['reports']} сносов)",
+                callback_data=f"buy_sub_{sub_id}"
+            )
+        ])
+    keyboard.append([InlineKeyboardButton(get_text(user_id, "btn_back"), callback_data="action_back_to_main")])
+    return InlineKeyboardMarkup(keyboard)
+
+async def get_extra_reports_keyboard(user_id: int) -> InlineKeyboardMarkup:
+    keyboard = []
+    for rep_id, rep in EXTRA_REPORTS.items():
+        keyboard.append([
+            InlineKeyboardButton(
+                f"{rep['emoji']} {rep['name']} - ${rep['price']}",
+                callback_data=f"buy_extra_{rep_id}"
             )
         ])
     keyboard.append([InlineKeyboardButton(get_text(user_id, "btn_back"), callback_data="action_back_to_main")])
@@ -389,8 +532,9 @@ async def get_packages_keyboard(user_id: int) -> InlineKeyboardMarkup:
 async def get_admin_keyboard(user_id: int) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup([
         [InlineKeyboardButton("📊 Список пользователей", callback_data="admin_users")],
-        [InlineKeyboardButton("💰 Изменить баланс", callback_data="admin_change_balance")],
+        [InlineKeyboardButton("💰 Изменить сносы", callback_data="admin_change_reports")],
         [InlineKeyboardButton("📈 Статистика", callback_data="admin_stats")],
+        [InlineKeyboardButton("🔚 Завершить админку", callback_data="admin_exit")],
         [InlineKeyboardButton(get_text(user_id, "btn_back"), callback_data="action_back_to_main")]
     ])
 
@@ -421,6 +565,10 @@ async def admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if user_id not in ADMIN_IDS:
         await update.message.reply_text("❌ У вас нет доступа к админ-панели!")
         return
+    
+    # Очищаем состояние админа
+    context.user_data.pop("admin_waiting_user", None)
+    context.user_data.pop("admin_waiting_reports", None)
     
     await update.message.reply_text(
         "👑 *Админ панель*\n\nВыберите действие:",
@@ -471,9 +619,10 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
     
-    if data == "action_my_balance":
+    if data == "action_my_reports":
+        sub_text = get_active_subscription_text(user_id)
         await query.edit_message_text(
-            get_text(user_id, "balance", user['balance']),
+            get_text(user_id, "balance", user['reports'], sub_text),
             parse_mode="Markdown",
             reply_markup=await get_main_keyboard(user_id)
         )
@@ -481,127 +630,148 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     if data == "action_history":
         purchases = db.get_user_purchases(user_id)
-        if not purchases:
+        usage = db.get_user_usage(user_id)
+        
+        if not purchases and not usage:
             await query.edit_message_text(
-                "📜 *История покупок*\n\nУ вас еще не было покупок.",
+                get_text(user_id, "history_empty"),
                 parse_mode="Markdown",
                 reply_markup=await get_main_keyboard(user_id)
             )
-        else:
-            text = "📜 *История покупок*\n\n"
+            return
+        
+        history_text = ""
+        if purchases:
+            history_text += "*Покупки:*\n"
             for p in purchases[:5]:
-                text += f"• {p['package_name']} | @{p['target']} | {p['claims_count']} жалоб | ${p['price']:.2f}\n"
-            await query.edit_message_text(
-                text,
-                parse_mode="Markdown",
-                reply_markup=await get_main_keyboard(user_id)
-            )
-        return
-    
-    # Пополнение баланса
-    if data == "action_deposit":
-        context.user_data.clear()
+                date = datetime.strptime(p['purchased_at'], '%Y-%m-%d %H:%M:%S.%f').strftime('%d.%m.%Y %H:%M')
+                history_text += f"• {p['item_name']} (+{p['reports_added']} сносов) - ${p['price']} ({date})\n"
+        
+        if usage:
+            history_text += "\n*Использование:*\n"
+            for u in usage[:5]:
+                date = datetime.strptime(u['used_at'], '%Y-%m-%d %H:%M:%S.%f').strftime('%d.%m.%Y %H:%M')
+                history_text += f"• Снос на @{u['target']} ({date})\n"
+        
         await query.edit_message_text(
-            "💰 *Пополнение баланса*\n\nВыберите сумму:",
+            get_text(user_id, "history", history_text),
             parse_mode="Markdown",
-            reply_markup=await get_deposit_amounts_keyboard(user_id)
+            reply_markup=await get_main_keyboard(user_id)
         )
         return
     
-    if data.startswith("deposit_"):
-        if data == "deposit_custom":
-            context.user_data["awaiting_custom_amount"] = True
-            await query.edit_message_text(
-                "💰 *Введите сумму пополнения*\n\nОтправьте число от $1 до $500:",
-                parse_mode="Markdown",
-                reply_markup=InlineKeyboardMarkup([
-                    [InlineKeyboardButton("🔙 Назад", callback_data="action_deposit")]
-                ])
-            )
-            return
-        
-        amount = float(data.split("_")[1])
-        await create_deposit_invoice(update, query, user_id, amount)
-        return
-    
-    # Покупка услуги
-    if data == "action_buy_service":
-        if user['balance'] < min(p['price'] for p in PACKAGES.values()):
-            await query.edit_message_text(
-                f"❌ *Недостаточно средств!*\n\nВаш баланс: ${user['balance']:.2f}",
-                parse_mode="Markdown",
-                reply_markup=await get_main_keyboard(user_id)
-            )
-            return
-        
+    # Подписки
+    if data == "action_subscriptions":
         await query.edit_message_text(
-            "🛒 *Выберите пакет услуг:*",
+            get_text(user_id, "buy_subscription"),
             parse_mode="Markdown",
-            reply_markup=await get_packages_keyboard(user_id)
+            reply_markup=await get_subscriptions_keyboard(user_id)
         )
         return
     
-    if data.startswith("package_"):
-        package_id = data.split("_")[1]
-        context.user_data["selected_package"] = package_id
-        context.user_data["awaiting_target"] = True
-        pkg = PACKAGES[package_id]
-        pkg_name = get_package_name(user_id, package_id)
-        
+    if data.startswith("buy_sub_"):
+        sub_id = data.replace("buy_sub_", "")
+        sub = SUBSCRIPTIONS.get(sub_id)
+        if sub:
+            await create_payment_invoice(update, query, user_id, "subscription", sub_id, sub['price'])
+        return
+    
+    # Дополнительные сносы
+    if data == "action_extra_reports":
         await query.edit_message_text(
-            f"{pkg['emoji']} *{pkg_name}*\n\n💰 Цена: ${pkg['price']}\n📊 Жалоб: {pkg['claims_min']}-{pkg['claims_max']}\n\n📝 *Введите цель для атаки:*",
-            parse_mode="Markdown"
+            get_text(user_id, "buy_extra"),
+            parse_mode="Markdown",
+            reply_markup=await get_extra_reports_keyboard(user_id)
         )
         return
     
-    if data.startswith("confirm_"):
-        package_id = data.split("_")[1]
-        pkg = PACKAGES[package_id]
-        pkg_name = get_package_name(user_id, package_id)
-        target = context.user_data.get("target")
+    if data.startswith("buy_extra_"):
+        extra_id = data.replace("buy_extra_", "")
+        extra = EXTRA_REPORTS.get(extra_id)
+        if extra:
+            await create_payment_invoice(update, query, user_id, "extra", extra_id, extra['price'])
+        return
+    
+    # Проверка платежа
+    if data.startswith("check_payment_"):
+        invoice_id = int(data.split("_")[2])
+        session = db.get_payment_session(user_id)
         
-        if not target:
-            await query.edit_message_text("❌ Ошибка: цель не указана.")
+        if not session or session['invoice_id'] != invoice_id:
+            await query.edit_message_text("❌ Сессия платежа не найдена")
             return
         
-        user = db.get_user(user_id)
-        if not user or user['balance'] < pkg['price']:
-            await query.edit_message_text("❌ Недостаточно средств!", reply_markup=await get_main_keyboard(user_id))
-            return
-        
-        db.update_balance(user_id, pkg['price'], "subtract")
-        claims_count = random.randint(pkg['claims_min'], pkg['claims_max'])
-        
-        db.add_purchase(user_id, pkg_name, target, claims_count, pkg['success_rate'], pkg['price'])
-        user = db.get_user(user_id)
-        
-        await query.edit_message_text(
-            f"✅ *Заказ выполнен!*\n\n📦 Пакет: {pkg['emoji']} {pkg_name}\n🎯 Цель: @{target}\n💰 Списано: ${pkg['price']}\n📊 Отправлено жалоб: {claims_count}\n\n💰 Остаток: ${user['balance']:.2f}",
-            parse_mode="Markdown"
-        )
-        
-        asyncio.create_task(run_fake_reporting(user_id, target, claims_count, context.bot))
-        
-        context.user_data["awaiting_target"] = False
-        context.user_data["target"] = None
+        try:
+            invoices = await crypto_client.get_invoices([invoice_id])
+            if invoices and invoices.get('items'):
+                invoice = invoices['items'][0]
+                if invoice.get('status') == 'paid':
+                    # Активируем товар
+                    if session['item_type'] == 'subscription':
+                        sub = SUBSCRIPTIONS[session['item_key']]
+                        db.add_subscription(user_id, session['item_key'], sub['reports'], sub['duration_days'])
+                        db.add_reports(user_id, sub['reports'], "subscription", sub['name'], session['amount'])
+                        db.delete_payment_session(user_id)
+                        
+                        await query.edit_message_text(
+                            get_text(user_id, "purchase_success", 
+                                    sub['name'], sub['reports'], session['amount'], 
+                                    db.get_user(user_id)['reports']),
+                            parse_mode="Markdown",
+                            reply_markup=await get_main_keyboard(user_id)
+                        )
+                    else:
+                        extra = EXTRA_REPORTS[session['item_key']]
+                        db.add_reports(user_id, extra['reports'], "extra", extra['name'], session['amount'])
+                        db.delete_payment_session(user_id)
+                        
+                        await query.edit_message_text(
+                            get_text(user_id, "purchase_success",
+                                    extra['name'], extra['reports'], session['amount'],
+                                    db.get_user(user_id)['reports']),
+                            parse_mode="Markdown",
+                            reply_markup=await get_main_keyboard(user_id)
+                        )
+                else:
+                    await query.answer("⏳ Платеж еще не подтвержден", show_alert=True)
+            else:
+                await query.answer(get_text(user_id, "payment_not_found"), show_alert=True)
+        except Exception as e:
+            await query.answer(f"Ошибка: {str(e)}", show_alert=True)
         return
     
     # Админ панель
+    if data == "admin_exit":
+        context.user_data.clear()
+        await query.edit_message_text(
+            "👑 *Админ панель закрыта*",
+            parse_mode="Markdown",
+            reply_markup=await get_main_keyboard(user_id)
+        )
+        return
+    
     if data == "admin_users":
         if user_id not in ADMIN_IDS:
             await query.edit_message_text("❌ Доступ запрещен!")
             return
         
         users = db.get_all_users()
-        text = "📊 *Список пользователей*\n\n"
-        for u in users[:20]:
-            name = u.get('username') or u.get('first_name') or str(u['user_id'])
-            text += f"• ID: `{u['user_id']}` | @{name} | 💰 ${u['balance']:.2f}\n"
-        text += f"\nВсего: {len(users)}"
+        if not users:
+            text = "📊 *Список пользователей*\n\nПользователей нет"
+        else:
+            text = "📊 *Список пользователей*\n\n"
+            for u in users[:20]:
+                name = u.get('username') or u.get('first_name') or str(u['user_id'])
+                text += f"• ID: `{u['user_id']}` | @{name} | 💥 {u['reports']} сносов\n"
+            text += f"\nВсего: {len(users)}"
         
-        await query.edit_message_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("🔙 Назад", callback_data="admin_back")]
-        ]))
+        await query.edit_message_text(
+            text,
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("🔙 Назад", callback_data="admin_back")]
+            ])
+        )
         return
     
     if data == "admin_stats":
@@ -610,10 +780,16 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
         
         users = db.get_all_users()
-        total_balance = sum(u['balance'] for u in users)
+        total_reports = sum(u['reports'] for u in users)
+        total_purchased = sum(u['total_purchased'] for u in users)
+        total_used = sum(u['total_used'] for u in users)
         
         await query.edit_message_text(
-            f"📈 *Статистика*\n\n👥 Пользователей: {len(users)}\n💰 Общий баланс: ${total_balance:.2f}",
+            f"📈 *Статистика*\n\n"
+            f"👥 Пользователей: {len(users)}\n"
+            f"💥 Всего сносов: {total_reports}\n"
+            f"📥 Куплено: {total_purchased}\n"
+            f"📤 Использовано: {total_used}",
             parse_mode="Markdown",
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton("🔙 Назад", callback_data="admin_back")]
@@ -621,15 +797,16 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
     
-    if data == "admin_change_balance":
+    if data == "admin_change_reports":
         if user_id not in ADMIN_IDS:
             await query.edit_message_text("❌ Доступ запрещен!")
             return
         
-        context.user_data["admin_waiting_input"] = True
+        context.user_data["admin_waiting_user"] = True
         
         await query.edit_message_text(
-            "💰 *Изменение баланса*\n\nВведите ID пользователя или @username:",
+            "💰 *Изменение количества сносов*\n\n"
+            "Введите ID пользователя или @username:",
             parse_mode="Markdown",
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton("🔙 Назад", callback_data="admin_back")]
@@ -644,39 +821,74 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup=await get_admin_keyboard(user_id)
         )
         return
+    
+    # Использование сноса (из главного меню)
+    if data.startswith("use_report_"):
+        target = context.user_data.get("target_for_report")
+        if not target:
+            context.user_data["awaiting_target"] = True
+            await query.edit_message_text(
+                get_text(user_id, "target_username"),
+                parse_mode="Markdown",
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton(get_text(user_id, "btn_back"), callback_data="action_back_to_main")]
+                ])
+            )
+            return
+        
+        # Используем снос
+        if db.use_report(user_id, target):
+            user = db.get_user(user_id)
+            await query.edit_message_text(
+                get_text(user_id, "report_success", target, user['reports'], "Успешно!"),
+                parse_mode="Markdown",
+                reply_markup=await get_main_keyboard(user_id)
+            )
+            context.user_data.pop("target_for_report", None)
+        else:
+            await query.edit_message_text(
+                get_text(user_id, "no_reports_left"),
+                parse_mode="Markdown",
+                reply_markup=await get_main_keyboard(user_id)
+            )
+        return
 
-async def create_deposit_invoice(update, query, user_id: int, amount: float):
+async def create_payment_invoice(update, query, user_id: int, item_type: str, item_key: str, amount: float):
     try:
         invoice = await crypto_client.create_invoice(
             asset="USDT",
             amount=str(amount),
-            description=f"Пополнение баланса на ${amount}",
-            payload=f"deposit_{user_id}",
+            description=f"Покупка: {item_type} - {item_key}",
+            payload=f"{item_type}_{item_key}_{user_id}",
             expires_in=1800
         )
         
         invoice_id = invoice["invoice_id"]
         pay_url = invoice["bot_invoice_url"]
         
-        db.add_deposit(user_id, invoice_id, amount, "USDT", "pending")
-        db.save_deposit_session(user_id, invoice_id, amount, "USDT", 1800)
+        db.save_payment_session(user_id, invoice_id, item_type, item_key, amount, 1800)
         
         keyboard = InlineKeyboardMarkup([
             [InlineKeyboardButton("💳 ОПЛАТИТЬ", url=pay_url)],
-            [InlineKeyboardButton("🔄 Проверить оплату", callback_data=f"check_deposit_{invoice_id}")],
-            [InlineKeyboardButton("🔙 Назад", callback_data="action_deposit")]
+            [InlineKeyboardButton(get_text(user_id, "check_payment"), callback_data=f"check_payment_{invoice_id}")],
+            [InlineKeyboardButton(get_text(user_id, "btn_back"), callback_data="action_back_to_main")]
         ])
         
         await query.edit_message_text(
-            f"🧾 *Счет на пополнение*\n\n💰 Сумма: ${amount}\n🆔 Номер: `{invoice_id}`\n⏱️ Действителен 30 минут\n\nПосле оплаты нажмите «Проверить оплату»",
+            get_text(user_id, "crypto_payment", amount, invoice_id),
             parse_mode="Markdown",
             reply_markup=keyboard
         )
     except Exception as e:
-        await query.edit_message_text(f"❌ Ошибка: {str(e)}")
+        await query.edit_message_text(
+            get_text(user_id, "payment_error", str(e)),
+            parse_mode="Markdown",
+            reply_markup=await get_main_keyboard(user_id)
+        )
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
+    text = update.message.text.strip()
     
     db.get_or_create_user(
         user_id, 
@@ -685,147 +897,101 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         update.effective_user.last_name
     )
     
-    # Админ режим
-    if context.user_data.get("admin_waiting_input"):
-        user_input = update.message.text.strip()
+    # Админ режим - ожидание ID пользователя
+    if context.user_data.get("admin_waiting_user"):
+        user_input = text
         
-        if "admin_waiting_amount" not in context.user_data:
-            target_user = None
-            try:
-                target_id = int(user_input)
-                target_user = db.get_user(target_id)
-            except ValueError:
-                username = user_input.lstrip('@')
-                target_user = db.get_user_by_username(username)
-            
-            if not target_user:
-                await update.message.reply_text(f"❌ Пользователь не найден: {user_input}")
+        # Ищем пользователя
+        target_user = None
+        try:
+            target_id = int(user_input)
+            target_user = db.get_user(target_id)
+        except ValueError:
+            username = user_input.lstrip('@')
+            target_user = db.get_user_by_username(username)
+        
+        if not target_user:
+            await update.message.reply_text(f"❌ Пользователь не найден: {user_input}")
+            return
+        
+        context.user_data["admin_target_user_id"] = target_user['user_id']
+        context.user_data["admin_waiting_user"] = False
+        context.user_data["admin_waiting_reports"] = True
+        
+        await update.message.reply_text(
+            f"💰 Введите новое количество сносов для пользователя `{target_user['user_id']}`:\n"
+            f"Текущее количество: {target_user['reports']}",
+            parse_mode="Markdown"
+        )
+        return
+    
+    # Админ режим - ожидание суммы
+    if context.user_data.get("admin_waiting_reports"):
+        try:
+            new_reports = int(text)
+            if new_reports < 0:
+                await update.message.reply_text("❌ Количество сносов не может быть отрицательным!")
                 return
             
-            context.user_data["admin_target_user_id"] = target_user['user_id']
-            context.user_data["admin_waiting_amount"] = True
+            target_user_id = context.user_data.get("admin_target_user_id")
+            db.set_reports_direct(target_user_id, new_reports)
             
-            await update.message.reply_text(
-                f"💰 Введите новую сумму баланса для пользователя `{target_user['user_id']}`:",
-                parse_mode="Markdown"
-            )
-        else:
-            try:
-                new_balance = float(user_input)
-                target_user_id = context.user_data.get("admin_target_user_id")
-                
-                db.set_balance_direct(target_user_id, new_balance)
-                
-                await update.message.reply_text(f"✅ Баланс изменен на ${new_balance:.2f}")
-                
-                context.user_data["admin_waiting_input"] = False
-                context.user_data["admin_waiting_amount"] = False
-                
-            except ValueError:
-                await update.message.reply_text("❌ Введите корректную сумму!")
-        return
-    
-    # Пополнение
-    if context.user_data.get("awaiting_custom_amount"):
-        try:
-            amount = float(update.message.text.strip())
-            if 1 <= amount <= 500:
-                context.user_data["awaiting_custom_amount"] = False
-                
-                invoice = await crypto_client.create_invoice(
-                    asset="USDT",
-                    amount=str(amount),
-                    description=f"Пополнение баланса на ${amount}",
-                    payload=f"deposit_{user_id}",
-                    expires_in=1800
-                )
-                
-                invoice_id = invoice["invoice_id"]
-                pay_url = invoice["bot_invoice_url"]
-                
-                db.add_deposit(user_id, invoice_id, amount, "USDT", "pending")
-                db.save_deposit_session(user_id, invoice_id, amount, "USDT", 1800)
-                
-                keyboard = InlineKeyboardMarkup([
-                    [InlineKeyboardButton("💳 ОПЛАТИТЬ", url=pay_url)],
-                    [InlineKeyboardButton("🔄 Проверить оплату", callback_data=f"check_deposit_{invoice_id}")],
-                    [InlineKeyboardButton("🔙 Главное меню", callback_data="action_back_to_main")]
-                ])
-                
-                await update.message.reply_text(
-                    f"🧾 *Счет создан!*\n\n💰 Сумма: ${amount}\n\nПосле оплаты нажмите «Проверить оплату»",
-                    parse_mode="Markdown",
-                    reply_markup=keyboard
-                )
-            else:
-                await update.message.reply_text("❌ Сумма должна быть от $1 до $500")
+            await update.message.reply_text(f"✅ Количество сносов изменено на {new_reports}")
+            
+            # Очищаем состояние админа
+            context.user_data.pop("admin_waiting_reports", None)
+            context.user_data.pop("admin_target_user_id", None)
+            
         except ValueError:
-            await update.message.reply_text("❌ Введите число")
+            await update.message.reply_text("❌ Введите корректное число!")
         return
     
-    # Ввод цели
+    # Ожидание цели для сноса
     if context.user_data.get("awaiting_target"):
-        target_text = update.message.text.strip()
-        target = extract_username(target_text)
+        target = extract_username(text)
         
         if not is_valid_username(target):
             await update.message.reply_text("❌ Неверный формат username. Попробуйте еще раз:")
             return
         
-        context.user_data["target"] = target
+        user = db.get_user(user_id)
+        if user['reports'] <= 0:
+            await update.message.reply_text(
+                get_text(user_id, "no_reports_left"),
+                parse_mode="Markdown",
+                reply_markup=await get_main_keyboard(user_id)
+            )
+            context.user_data.pop("awaiting_target", None)
+            return
+        
+        keyboard = InlineKeyboardMarkup([
+            [InlineKeyboardButton("✅ Подтвердить", callback_data="use_report_confirm")],
+            [InlineKeyboardButton("❌ Отмена", callback_data="action_back_to_main")]
+        ])
+        
+        context.user_data["target_for_report"] = target
         context.user_data["awaiting_target"] = False
         
-        package_id = context.user_data.get("selected_package")
-        if package_id:
-            pkg = PACKAGES[package_id]
-            pkg_name = get_package_name(user_id, package_id)
-            
-            keyboard = InlineKeyboardMarkup([
-                [InlineKeyboardButton("✅ Подтвердить", callback_data=f"confirm_{package_id}")],
-                [InlineKeyboardButton("🔙 Назад", callback_data="action_buy_service")]
-            ])
-            
-            await update.message.reply_text(
-                f"🎯 *Подтверждение*\n\n📦 Пакет: {pkg['emoji']} {pkg_name}\n🎯 Цель: @{target}\n💰 Сумма: ${pkg['price']}\n\n✅ Подтвердите заказ:",
-                parse_mode="Markdown",
-                reply_markup=keyboard
-            )
+        await update.message.reply_text(
+            get_text(user_id, "confirm_report", target, user['reports'] - 1),
+            parse_mode="Markdown",
+            reply_markup=keyboard
+        )
+        return
+    
+    # Если не в специальном режиме - показываем меню
+    await update.message.reply_text(
+        get_text(user_id, "start", update.effective_user.first_name),
+        parse_mode="Markdown",
+        reply_markup=await get_main_keyboard(user_id)
+    )
 
 async def run_fake_reporting(user_id: int, target: str, claims_count: int, bot):
-    """Имитация процесса"""
-    import time
-    start_time = time.time()
-    sent = 0
-    
-    status_msg = await bot.send_message(
+    """Имитация процесса (для совместимости с старым кодом)"""
+    # Просто отправляем уведомление
+    await bot.send_message(
         user_id,
-        f"🚀 *Процесс запущен*\n🎯 Цель: @{target}\n📊 Всего: {claims_count}\n\n📨 Отправлено: 0 / {claims_count}",
-        parse_mode="Markdown"
-    )
-    
-    while sent < claims_count:
-        batch = random.randint(15, 25)
-        if sent + batch > claims_count:
-            batch = claims_count - sent
-        sent += batch
-        
-        progress = int(30 * sent / claims_count)
-        progress_bar = "█" * progress + "░" * (30 - progress)
-        
-        try:
-            await status_msg.edit_text(
-                f"🚀 *Процесс*\n🎯 Цель: @{target}\n📊 Всего: {claims_count}\n\n📨 Отправлено: {sent} / {claims_count}\n📈 `{progress_bar}`",
-                parse_mode="Markdown"
-            )
-        except:
-            pass
-        
-        await asyncio.sleep(random.uniform(0.5, 1))
-    
-    elapsed_time = int(time.time() - start_time)
-    
-    await status_msg.edit_text(
-        f"✅ *ГОТОВО!*\n\n🎯 Цель: @{target}\n📊 Отправлено жалоб: {claims_count}\n🕒 Время: {elapsed_time} сек.\n\n➡️ /start — главное меню",
+        f"✅ *Снос выполнен!*\n\n🎯 Цель: @{target}\n💥 Использовано: {claims_count} сносов",
         parse_mode="Markdown"
     )
 
@@ -833,22 +999,18 @@ async def run_fake_reporting(user_id: int, target: str, claims_count: int, bot):
 async def run_bot():
     """Запуск бота"""
     try:
-        # Создаем приложение
         application = Application.builder().token(BOT_TOKEN).build()
         
-        # Добавляем обработчики
         application.add_handler(CommandHandler("start", start))
         application.add_handler(CommandHandler("admin", admin_panel))
         application.add_handler(CallbackQueryHandler(button_handler))
         application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
         
-        # Запускаем polling
         logger.info("Бот запущен и готов к работе!")
         await application.initialize()
         await application.start()
         await application.updater.start_polling()
         
-        # Держим бота запущенным
         while True:
             await asyncio.sleep(3600)
             
