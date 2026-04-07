@@ -35,31 +35,26 @@ USERS_FILE = "users_list.json"
 SUBSCRIPTIONS = {
     "starter": {
         "reports": 50,
-        "duration_hours": 24,
         "price": 4.99,
         "emoji": "🌟"
     },
     "standard": {
         "reports": 120,
-        "duration_hours": 24,
         "price": 9.99,
         "emoji": "⭐"
     },
     "premium": {
         "reports": 250,
-        "duration_hours": 24,
         "price": 19.99,
         "emoji": "👑"
     },
     "vip": {
         "reports": 500,
-        "duration_hours": 24,
         "price": 39.99,
         "emoji": "💎"
     },
     "extreme": {
         "reports": 1000,
-        "duration_hours": 24,
         "price": 79.99,
         "emoji": "🔥"
     }
@@ -121,7 +116,7 @@ TEXTS = {
         "confirm_report": "🎯 *Подтверждение сноса*\n\nЦель: @{}\nОстанется сносов: {}\n\n✅ Подтверждаете?",
         "report_success": "✅ *Снос выполнен!*\n\n🎯 Цель: @{}\n💥 Осталось сносов: {}\n\nРезультат: Успешно!",
         "no_reports_left": "❌ *Нет сносов!*\n\nКупите подписку или дополнительные сносы в магазине.",
-        "buy_subscription": "🛒 *Магазин - Подписки*\n\nВыберите подписку (все подписки действуют 24 часа):",
+        "buy_subscription": "🛒 *Магазин - Подписки*\n\nВыберите подписку (все подписки работают пока не закончатся сносы):",
         "buy_extra": "🛒 *Магазин - Дополнительные сносы*\n\nВыберите пакет:",
         "purchase_success": "✅ *Покупка успешна!*\n\n📦 {}\n🎁 Получено: {} сносов\n💰 Цена: ${}\n\n💥 Всего сносов: {}",
         "history_empty": "📜 *История*\n\nУ вас пока нет операций.",
@@ -134,7 +129,9 @@ TEXTS = {
         "send_success": "✅ *Готово!*\n\n🎯 Цель: @{}\n📊 Отправлено жалоб: {}\n⏱️ Время: {}\n💥 Осталось сносов: {}",
         "role_user": "👤 Пользователь",
         "role_moder": "🛡️ Модератор",
-        "role_admin": "👑 Администратор"
+        "role_admin": "👑 Администратор",
+        "admin_give_subscription": "🎫 *Выдача подписки*\n\nВыберите подписку для выдачи пользователю:",
+        "subscription_given": "✅ *Подписка выдана!*\n\nПользователь {} получил подписку {} (+{} сносов)"
     },
     "uk": {
         "welcome": "🌟 *Ласкаво просимо до Report Bot!* 🌟\n\n"
@@ -163,7 +160,7 @@ TEXTS = {
         "confirm_report": "🎯 *Підтвердження сносу*\n\nЦіль: @{}\nЗалишиться сносів: {}\n\n✅ Підтверджуєте?",
         "report_success": "✅ *Снос виконано!*\n\n🎯 Ціль: @{}\n💥 Залишилось сносів: {}\n\nРезультат: Успішно!",
         "no_reports_left": "❌ *Немає сносів!*\n\nКупіть підписку або додаткові сноси в магазині.",
-        "buy_subscription": "🛒 *Магазин - Підписки*\n\nОберіть підписку (всі підписки діють 24 години):",
+        "buy_subscription": "🛒 *Магазин - Підписки*\n\nОберіть підписку (всі підписки працюють поки не закінчаться сноси):",
         "buy_extra": "🛒 *Магазин - Додаткові сноси*\n\nОберіть пакет:",
         "purchase_success": "✅ *Покупка успішна!*\n\n📦 {}\n🎁 Отримано: {} сносів\n💰 Ціна: ${}\n\n💥 Всього сносів: {}",
         "history_empty": "📜 *Історія*\n\nУ вас поки що немає операцій.",
@@ -176,7 +173,9 @@ TEXTS = {
         "send_success": "✅ *Готово!*\n\n🎯 Ціль: @{}\n📊 Відправлено скарг: {}\n⏱️ Час: {}\n💥 Залишилось сносів: {}",
         "role_user": "👤 Користувач",
         "role_moder": "🛡️ Модератор",
-        "role_admin": "👑 Адміністратор"
+        "role_admin": "👑 Адміністратор",
+        "admin_give_subscription": "🎫 *Видача підписки*\n\nВиберіть підписку для видачі користувачу:",
+        "subscription_given": "✅ *Підписка видана!*\n\nКористувач {} отримав підписку {} (+{} сносів)"
     },
     "en": {
         "welcome": "🌟 *Welcome to Report Bot!* 🌟\n\n"
@@ -205,7 +204,7 @@ TEXTS = {
         "confirm_report": "🎯 *Confirm report*\n\nTarget: @{}\nReports left: {}\n\n✅ Confirm?",
         "report_success": "✅ *Report completed!*\n\n🎯 Target: @{}\n💥 Reports left: {}\n\nResult: Success!",
         "no_reports_left": "❌ *No reports left!*\n\nBuy a subscription or extra reports in the shop.",
-        "buy_subscription": "🛒 *Shop - Subscriptions*\n\nChoose a subscription (all subscriptions last 24 hours):",
+        "buy_subscription": "🛒 *Shop - Subscriptions*\n\nChoose a subscription (all subscriptions work until reports run out):",
         "buy_extra": "🛒 *Shop - Extra reports*\n\nChoose a package:",
         "purchase_success": "✅ *Purchase successful!*\n\n📦 {}\n🎁 Received: {} reports\n💰 Price: ${}\n\n💥 Total reports: {}",
         "history_empty": "📜 *History*\n\nNo transactions yet.",
@@ -218,7 +217,9 @@ TEXTS = {
         "send_success": "✅ *Done!*\n\n🎯 Target: @{}\n📊 Reports sent: {}\n⏱️ Time: {}\n💥 Reports left: {}",
         "role_user": "👤 User",
         "role_moder": "🛡️ Moderator",
-        "role_admin": "👑 Administrator"
+        "role_admin": "👑 Administrator",
+        "admin_give_subscription": "🎫 *Give subscription*\n\nChoose a subscription to give to the user:",
+        "subscription_given": "✅ *Subscription given!*\n\nUser {} received {} subscription (+{} reports)"
     }
 }
 
@@ -277,13 +278,13 @@ class Database:
             
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS subscriptions (
-                    user_id INTEGER PRIMARY KEY,
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER,
                     sub_type TEXT,
                     reports_limit INTEGER,
                     reports_used INTEGER DEFAULT 0,
-                    start_date TIMESTAMP,
-                    end_date TIMESTAMP,
                     active INTEGER DEFAULT 1,
+                    purchased_at TIMESTAMP,
                     FOREIGN KEY (user_id) REFERENCES users (user_id)
                 )
             """)
@@ -392,31 +393,35 @@ class Database:
             conn.commit()
             return True
     
-    def get_active_subscription(self, user_id: int) -> Optional[dict]:
+    def get_active_subscriptions(self, user_id: int) -> List[dict]:
         with sqlite3.connect(self.db_name) as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
             cursor.execute("""
                 SELECT * FROM subscriptions 
-                WHERE user_id = ? AND active = 1 AND end_date > ?
-            """, (user_id, datetime.now()))
-            sub = cursor.fetchone()
-            return dict(sub) if sub else None
+                WHERE user_id = ? AND active = 1
+                ORDER BY purchased_at DESC
+            """, (user_id,))
+            return [dict(row) for row in cursor.fetchall()]
     
-    def add_subscription(self, user_id: int, sub_type: str, reports_limit: int, duration_hours: int):
+    def add_subscription(self, user_id: int, sub_type: str, reports_limit: int, price: float = 0):
         with sqlite3.connect(self.db_name) as conn:
             cursor = conn.cursor()
             
-            cursor.execute("UPDATE subscriptions SET active = 0 WHERE user_id = ?", (user_id,))
-            
-            start_date = datetime.now()
-            end_date = start_date + timedelta(hours=duration_hours)
             cursor.execute("""
-                INSERT OR REPLACE INTO subscriptions (user_id, sub_type, reports_limit, reports_used, start_date, end_date, active)
-                VALUES (?, ?, ?, 0, ?, ?, 1)
-            """, (user_id, sub_type, reports_limit, start_date, end_date))
+                INSERT INTO subscriptions (user_id, sub_type, reports_limit, active, purchased_at)
+                VALUES (?, ?, ?, 1, ?)
+            """, (user_id, sub_type, reports_limit, datetime.now()))
             
             cursor.execute("UPDATE users SET reports = reports + ? WHERE user_id = ?", (reports_limit, user_id))
+            
+            if price > 0:
+                sub_names = {"starter": "Starter", "standard": "Standard", "premium": "Premium", "vip": "VIP", "extreme": "Extreme"}
+                sub_name = sub_names.get(sub_type, sub_type)
+                cursor.execute("""
+                    INSERT INTO purchases (user_id, item_type, item_name, reports_added, price, purchased_at)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                """, (user_id, "subscription", sub_name, reports_limit, price, datetime.now()))
             
             conn.commit()
     
@@ -514,15 +519,18 @@ def get_text(user_id: int, key: str, *args) -> str:
         return text.format(*args)
     return text
 
-def get_active_subscription_text(user_id: int) -> str:
-    sub = db.get_active_subscription(user_id)
-    if not sub:
+def get_active_subscriptions_text(user_id: int) -> str:
+    subs = db.get_active_subscriptions(user_id)
+    if not subs:
         return get_text(user_id, "no_active_subs")
     
-    sub_names = {"starter": "🌟", "standard": "⭐", "premium": "👑", "vip": "💎", "extreme": "🔥"}
-    end_date = datetime.strptime(sub['end_date'], '%Y-%m-%d %H:%M:%S.%f').strftime('%d.%m.%Y %H:%M')
+    sub_names = {"starter": "🌟 Starter", "standard": "⭐ Standard", "premium": "👑 Premium", "vip": "💎 VIP", "extreme": "🔥 Extreme"}
+    text = ""
+    for sub in subs:
+        remaining = sub['reports_limit'] - sub['reports_used']
+        text += f"• {sub_names.get(sub['sub_type'], sub['sub_type'])}: {remaining}/{sub['reports_limit']} сносов\n"
     
-    return f"• {sub_names.get(sub['sub_type'], '❓')} до {end_date} ({sub['reports_limit']} сносів)"
+    return text
 
 def extract_username(text: str) -> str:
     text = text.strip()
@@ -587,12 +595,25 @@ async def get_admin_keyboard(user_id: int) -> InlineKeyboardMarkup:
     keyboard = [
         [InlineKeyboardButton("📊 Список пользователей", callback_data="admin_users")],
         [InlineKeyboardButton("💰 Изменить сносы", callback_data="admin_change_reports")],
+        [InlineKeyboardButton("🎫 Выдать подписку", callback_data="admin_give_subscription")],
         [InlineKeyboardButton("📈 Статистика", callback_data="admin_stats")],
         [InlineKeyboardButton("➕ Добавить модератора", callback_data="admin_add_moderator")],
         [InlineKeyboardButton("➖ Удалить модератора", callback_data="admin_remove_moderator")],
         [InlineKeyboardButton("🔚 Выйти из админки", callback_data="admin_exit")],
         [InlineKeyboardButton(get_text(user_id, "btn_back"), callback_data="action_back_to_main")]
     ]
+    return InlineKeyboardMarkup(keyboard)
+
+async def get_admin_subscriptions_keyboard(user_id: int) -> InlineKeyboardMarkup:
+    keyboard = []
+    for sub_id, sub in SUBSCRIPTIONS.items():
+        keyboard.append([
+            InlineKeyboardButton(
+                f"{sub['emoji']} {sub['reports']} сносов",
+                callback_data=f"admin_give_sub_{sub_id}"
+            )
+        ])
+    keyboard.append([InlineKeyboardButton("🔙 Назад", callback_data="action_admin_panel")])
     return InlineKeyboardMarkup(keyboard)
 
 async def get_language_keyboard(user_id: int) -> InlineKeyboardMarkup:
@@ -703,7 +724,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if data == "action_profile":
         user = db.get_user(user_id)
         role = get_text(user_id, f"role_{get_user_role(user_id)}")
-        sub_text = get_active_subscription_text(user_id)
+        sub_text = get_active_subscriptions_text(user_id)
         await query.edit_message_text(
             get_text(user_id, "profile", user_id, role, user['reports'], user['total_purchased'], user['total_used'], sub_text),
             parse_mode="Markdown",
@@ -755,7 +776,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user = db.get_user(user_id)
         role = get_text(user_id, f"role_{get_user_role(user_id)}")
         await query.edit_message_text(
-            get_text(user_id, "profile", user_id, role, user['reports'], user['total_purchased'], user['total_used'], get_active_subscription_text(user_id)),
+            get_text(user_id, "profile", user_id, role, user['reports'], user['total_purchased'], user['total_used'], get_active_subscriptions_text(user_id)),
             parse_mode="Markdown",
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton(get_text(user_id, "btn_back"), callback_data="action_profile")]
@@ -803,6 +824,51 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             parse_mode="Markdown",
             reply_markup=await get_main_keyboard(user_id)
         )
+        return
+    
+    if data == "admin_give_subscription":
+        if not is_admin_or_moderator(user_id):
+            await query.answer("❌ Доступ запрещен!", show_alert=True)
+            return
+        
+        context.user_data["admin_giving_subscription"] = True
+        await query.edit_message_text(
+            "🎫 *Выдача подписки*\n\nВведите ID пользователя:",
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("🔙 Назад", callback_data="action_admin_panel")]
+            ])
+        )
+        return
+    
+    if data.startswith("admin_give_sub_"):
+        sub_id = data.replace("admin_give_sub_", "")
+        target_id = context.user_data.get("admin_subscription_target")
+        
+        if target_id:
+            sub = SUBSCRIPTIONS.get(sub_id)
+            if sub:
+                sub_names = {"starter": "Starter", "standard": "Standard", "premium": "Premium", "vip": "VIP", "extreme": "Extreme"}
+                sub_name = sub_names.get(sub_id, sub_id)
+                
+                db.add_subscription(target_id, sub_id, sub['reports'])
+                
+                await query.edit_message_text(
+                    get_text(user_id, "subscription_given", target_id, sub_name, sub['reports']),
+                    parse_mode="Markdown",
+                    reply_markup=await get_admin_keyboard(user_id)
+                )
+                
+                try:
+                    await query.bot.send_message(
+                        target_id,
+                        f"🎉 *Вам выдана подписка {sub_name}!*\n\n🎁 Получено: {sub['reports']} сносов\n💥 Всего сносов: {db.get_user(target_id)['reports']}",
+                        parse_mode="Markdown"
+                    )
+                except:
+                    pass
+                
+                context.user_data.pop("admin_subscription_target", None)
         return
     
     if data == "admin_users":
@@ -947,11 +1013,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         if db.use_report(user_id, target):
             context.user_data.pop("target_for_report", None)
-            await query.edit_message_text(
-                get_text(user_id, "report_success", target, db.get_user(user_id)['reports']),
-                parse_mode="Markdown",
-                reply_markup=await get_main_keyboard(user_id)
-            )
+            await send_reports_with_animation(update, user_id, target, query.bot)
+            await query.delete_message()
         else:
             await query.edit_message_text(
                 get_text(user_id, "no_reports_left"),
@@ -1009,8 +1072,7 @@ async def check_payment_and_activate(update, query, user_id: int, invoice_id: in
                     sub = SUBSCRIPTIONS[session['item_key']]
                     sub_names = {"starter": "Starter", "standard": "Standard", "premium": "Premium", "vip": "VIP", "extreme": "Extreme"}
                     sub_name = sub_names.get(session['item_key'], session['item_key'])
-                    db.add_subscription(user_id, session['item_key'], sub['reports'], sub['duration_hours'])
-                    db.add_reports(user_id, sub['reports'], "subscription", sub_name, session['amount'])
+                    db.add_subscription(user_id, session['item_key'], sub['reports'], session['amount'])
                     db.delete_payment_session(user_id)
                     
                     await query.edit_message_text(
@@ -1128,6 +1190,27 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             
         except ValueError:
             await update.message.reply_text("❌ Введите корректное число!")
+        return
+    
+    if context.user_data.get("admin_giving_subscription"):
+        try:
+            target_id = int(text)
+            target_user = db.get_user(target_id)
+            
+            if not target_user:
+                await update.message.reply_text(f"❌ Пользователь с ID {target_id} не найден!")
+                return
+            
+            context.user_data["admin_subscription_target"] = target_id
+            context.user_data["admin_giving_subscription"] = False
+            
+            await update.message.reply_text(
+                get_text(user_id, "admin_give_subscription"),
+                parse_mode="Markdown",
+                reply_markup=await get_admin_subscriptions_keyboard(user_id)
+            )
+        except ValueError:
+            await update.message.reply_text("❌ Введите корректный ID пользователя!")
         return
     
     if context.user_data.get("admin_adding_moderator"):
