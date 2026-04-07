@@ -1,11 +1,3 @@
-"""
-Telegram Bot with Subscription System + Report Services
-Подписки: дни, недели, месяцы
-Валюта: сносы (reports)
-ВСЕ КНОПКИ РАБОТАЮТ
-Поддержка языков: Українська, Русский, English
-"""
-
 import asyncio
 import sqlite3
 import random
@@ -24,46 +16,42 @@ from telegram.ext import (
     MessageHandler, ContextTypes, filters
 )
 
-# Настройка логирования
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
 )
 logger = logging.getLogger(__name__)
 
-# ==================== КОНФИГУРАЦИЯ ====================
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "8796055769:AAG1DRlpWd7Zft4oGb0_A8309qJgM3UOf3M")
 CRYPTO_PAY_TOKEN = os.environ.get("CRYPTO_PAY_TOKEN", "563714:AAoNQWxKCzZLDkotn5jjJdl0QFwMCAtEbtD")
 CRYPTO_PAY_TESTNET = False
 
 ADMIN_IDS = [964442694]
 
-# Пакеты подписок
 SUBSCRIPTIONS = {
     "day": {
-        "name": "Дневная подписка",
-        "reports": 2,  # количество сносов в день
-        "duration_days": 1,
+        "name": "Денна підписка",
+        "reports": 2,
+        "duration_hours": 24,
         "price": 1.99,
         "emoji": "📅"
     },
     "week": {
-        "name": "Недельная подписка", 
-        "reports": 3,  # количество сносов в неделю
-        "duration_days": 7,
+        "name": "Тижнева підписка", 
+        "reports": 3,
+        "duration_hours": 24,
         "price": 4.99,
         "emoji": "📆"
     },
     "month": {
-        "name": "Месячная подписка",
-        "reports": 5,  # количество сносов в месяц
-        "duration_days": 30,
+        "name": "Місячна підписка",
+        "reports": 5,
+        "duration_hours": 24,
         "price": 9.99,
         "emoji": "🗓️"
     }
 }
 
-# Дополнительные услуги (пакеты сносов)
 EXTRA_REPORTS = {
     "single": {
         "name": "1 снос",
@@ -72,18 +60,18 @@ EXTRA_REPORTS = {
         "emoji": "🎯"
     },
     "five": {
-        "name": "5 сносов",
+        "name": "5 сносів",
         "reports": 5,
         "price": 10.00,
         "emoji": "🔥"
     }
 }
 
-# Тексты на разных языках
 TEXTS = {
     "ru": {
         "start": "🔥 *Привет, {}!* 🔥\n\nДобро пожаловать в сервис сносов!\n\n👇 *Выберите действие:*",
         "balance": "📊 *Мои сносы*\n\nДоступно: *{}* сносов\n\nАктивные подписки:\n{}",
+        "btn_start_report": "🎯 Начать снос",
         "btn_subscriptions": "🎫 Подписки",
         "btn_extra_reports": "⚡ Доп. сносы",
         "btn_my_reports": "📊 Мои сносы",
@@ -97,12 +85,12 @@ TEXTS = {
         "target_username": "📝 *Введите username цели:*\n\nПример: @username или t.me/username",
         "confirm_report": "🎯 *Подтверждение сноса*\n\nЦель: @{}\nОстанется сносов: {}\n\n✅ Подтверждаете?",
         "report_success": "✅ *Снос выполнен!*\n\n🎯 Цель: @{}\n💥 Использовано сносов: 1\n📊 Осталось: {}\n\nРезультат: {}",
-        "buy_subscription": "🎫 *Выберите подписку:*",
+        "buy_subscription": "🎫 *Выберите подписку:*\n\n*Важно:* Сносы по подписке выдаются на 24 часа с момента покупки!",
         "buy_extra": "⚡ *Выберите пакет дополнительных сносов:*",
         "purchase_success": "✅ *Покупка успешна!*\n\n📦 {}\n🎁 Получено сносов: {}\n💰 Цена: ${}\n\n📊 Всего сносов: {}",
         "history_empty": "📜 *История*\n\nУ вас пока нет операций.",
         "history": "📜 *История операций*\n\n{}",
-        "sub_active": "✅ *Активная подписка*\n\nТип: {}\nДействует до: {}\nДоступно сносов в период: {}",
+        "sub_active": "✅ *Активная подписка*\n\nТип: {}\nДействует до: {}\nДоступно сносов: {}",
         "crypto_payment": "🧾 *Оплата через CryptoPay*\n\n💰 Сумма: ${}\n🆔 Invoice: `{}`\n\nПосле оплаты нажмите «Проверить»",
         "check_payment": "🔄 Проверить оплату",
         "payment_success": "✅ *Оплата подтверждена!*\n\nТовар активирован!",
@@ -113,8 +101,9 @@ TEXTS = {
     "uk": {
         "start": "🔥 *Вітаю, {}!* 🔥\n\nЛаскаво просимо до сервісу сносів!\n\n👇 *Оберіть дію:*",
         "balance": "📊 *Мої сноси*\n\nДоступно: *{}* сносів\n\nАктивні підписки:\n{}",
+        "btn_start_report": "🎯 Почати снос",
         "btn_subscriptions": "🎫 Підписки",
-        "btn_extra_reports": "⚡ Дод. сноси",
+        "btn_extra_reports": "⚡ Додаткові сноси",
         "btn_my_reports": "📊 Мої сноси",
         "btn_history": "📜 Історія",
         "btn_language": "🌐 Змінити мову",
@@ -126,12 +115,12 @@ TEXTS = {
         "target_username": "📝 *Введіть username цілі:*\n\nПриклад: @username або t.me/username",
         "confirm_report": "🎯 *Підтвердження сносу*\n\nЦіль: @{}\nЗалишиться сносів: {}\n\n✅ Підтверджуєте?",
         "report_success": "✅ *Снос виконано!*\n\n🎯 Ціль: @{}\n💥 Використано сносів: 1\n📊 Залишилось: {}\n\nРезультат: {}",
-        "buy_subscription": "🎫 *Оберіть підписку:*",
+        "buy_subscription": "🎫 *Оберіть підписку:*\n\n*Важливо:* Сноси за підпискою видаються на 24 години з моменту покупки!",
         "buy_extra": "⚡ *Оберіть пакет додаткових сносів:*",
         "purchase_success": "✅ *Покупка успішна!*\n\n📦 {}\n🎁 Отримано сносів: {}\n💰 Ціна: ${}\n\n📊 Всього сносів: {}",
         "history_empty": "📜 *Історія*\n\nУ вас поки що немає операцій.",
         "history": "📜 *Історія операцій*\n\n{}",
-        "sub_active": "✅ *Активна підписка*\n\nТип: {}\nДіє до: {}\nДоступно сносів у період: {}",
+        "sub_active": "✅ *Активна підписка*\n\nТип: {}\nДіє до: {}\nДоступно сносів: {}",
         "crypto_payment": "🧾 *Оплата через CryptoPay*\n\n💰 Сума: ${}\n🆔 Invoice: `{}`\n\nПісля оплати натисніть «Перевірити»",
         "check_payment": "🔄 Перевірити оплату",
         "payment_success": "✅ *Оплата підтверджена!*\n\nТовар активовано!",
@@ -142,6 +131,7 @@ TEXTS = {
     "en": {
         "start": "🔥 *Hello, {}!* 🔥\n\nWelcome to the report service!\n\n👇 *Choose an action:*",
         "balance": "📊 *My reports*\n\nAvailable: *{}* reports\n\nActive subscriptions:\n{}",
+        "btn_start_report": "🎯 Start report",
         "btn_subscriptions": "🎫 Subscriptions",
         "btn_extra_reports": "⚡ Extra reports",
         "btn_my_reports": "📊 My reports",
@@ -155,12 +145,12 @@ TEXTS = {
         "target_username": "📝 *Enter target username:*\n\nExample: @username or t.me/username",
         "confirm_report": "🎯 *Confirm report*\n\nTarget: @{}\nReports left: {}\n\n✅ Confirm?",
         "report_success": "✅ *Report completed!*\n\n🎯 Target: @{}\n💥 Reports used: 1\n📊 Left: {}\n\nResult: {}",
-        "buy_subscription": "🎫 *Choose subscription:*",
+        "buy_subscription": "🎫 *Choose subscription:*\n\n*Important:* Subscription reports are valid for 24 hours from purchase!",
         "buy_extra": "⚡ *Choose extra reports package:*",
         "purchase_success": "✅ *Purchase successful!*\n\n📦 {}\n🎁 Reports received: {}\n💰 Price: ${}\n\n📊 Total reports: {}",
         "history_empty": "📜 *History*\n\nNo transactions yet.",
         "history": "📜 *Transaction history*\n\n{}",
-        "sub_active": "✅ *Active subscription*\n\nType: {}\nValid until: {}\nReports available in period: {}",
+        "sub_active": "✅ *Active subscription*\n\nType: {}\nValid until: {}\nReports available: {}",
         "crypto_payment": "🧾 *Payment via CryptoPay*\n\n💰 Amount: ${}\n🆔 Invoice: `{}`\n\nAfter payment click «Check»",
         "check_payment": "🔄 Check payment",
         "payment_success": "✅ *Payment confirmed!*\n\nProduct activated!",
@@ -170,7 +160,6 @@ TEXTS = {
     }
 }
 
-# ==================== БАЗА ДАННЫХ ====================
 class Database:
     def __init__(self, db_name: str = "users.db"):
         self.db_name = db_name
@@ -180,7 +169,6 @@ class Database:
         with sqlite3.connect(self.db_name) as conn:
             cursor = conn.cursor()
             
-            # Основная таблица пользователей
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS users (
                     user_id INTEGER PRIMARY KEY,
@@ -196,7 +184,6 @@ class Database:
                 )
             """)
             
-            # Таблица подписок
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS subscriptions (
                     user_id INTEGER PRIMARY KEY,
@@ -210,7 +197,6 @@ class Database:
                 )
             """)
             
-            # Таблица покупок
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS purchases (
                     purchase_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -223,7 +209,6 @@ class Database:
                 )
             """)
             
-            # Таблица операций (использование сносов)
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS report_usage (
                     usage_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -233,7 +218,6 @@ class Database:
                 )
             """)
             
-            # Таблица платежных сессий
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS payment_sessions (
                     user_id INTEGER PRIMARY KEY,
@@ -301,10 +285,8 @@ class Database:
     def add_reports(self, user_id: int, amount: int, purchase_type: str, item_name: str, price: float):
         with sqlite3.connect(self.db_name) as conn:
             cursor = conn.cursor()
-            # Обновляем баланс сносов
             cursor.execute("UPDATE users SET reports = reports + ?, total_purchased = total_purchased + ? WHERE user_id = ?", 
                           (amount, amount, user_id))
-            # Добавляем запись о покупке
             cursor.execute("""
                 INSERT INTO purchases (user_id, item_type, item_name, reports_added, price, purchased_at)
                 VALUES (?, ?, ?, ?, ?, ?)
@@ -315,16 +297,13 @@ class Database:
         with sqlite3.connect(self.db_name) as conn:
             cursor = conn.cursor()
             
-            # Проверяем есть ли сносы
             cursor.execute("SELECT reports FROM users WHERE user_id = ?", (user_id,))
             result = cursor.fetchone()
             if not result or result[0] <= 0:
                 return False
             
-            # Уменьшаем количество сносов
             cursor.execute("UPDATE users SET reports = reports - 1, total_used = total_used + 1 WHERE user_id = ?", (user_id,))
             
-            # Записываем использование
             cursor.execute("""
                 INSERT INTO report_usage (user_id, target, used_at)
                 VALUES (?, ?, ?)
@@ -344,22 +323,19 @@ class Database:
             sub = cursor.fetchone()
             return dict(sub) if sub else None
     
-    def add_subscription(self, user_id: int, sub_type: str, reports_limit: int, duration_days: int):
+    def add_subscription(self, user_id: int, sub_type: str, reports_limit: int, duration_hours: int):
         with sqlite3.connect(self.db_name) as conn:
             cursor = conn.cursor()
             
-            # Деактивируем старую подписку
             cursor.execute("UPDATE subscriptions SET active = 0 WHERE user_id = ?", (user_id,))
             
-            # Создаем новую
             start_date = datetime.now()
-            end_date = start_date + timedelta(days=duration_days)
+            end_date = start_date + timedelta(hours=duration_hours)
             cursor.execute("""
                 INSERT OR REPLACE INTO subscriptions (user_id, sub_type, reports_limit, reports_used, start_date, end_date, active)
                 VALUES (?, ?, ?, 0, ?, ?, 1)
             """, (user_id, sub_type, reports_limit, start_date, end_date))
             
-            # Добавляем сносы
             cursor.execute("UPDATE users SET reports = reports + ? WHERE user_id = ?", (reports_limit, user_id))
             
             conn.commit()
@@ -416,7 +392,6 @@ class Database:
 
 db = Database()
 
-# ==================== CRYPTO PAY КЛИЕНТ ====================
 class CryptoPayClient:
     def __init__(self, api_token: str, testnet: bool = False):
         self.api_token = api_token
@@ -451,7 +426,6 @@ class CryptoPayClient:
 
 crypto_client = CryptoPayClient(CRYPTO_PAY_TOKEN, testnet=CRYPTO_PAY_TESTNET)
 
-# ==================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ====================
 def get_text(user_id: int, key: str, *args) -> str:
     user = db.get_user(user_id)
     lang = user['language'] if user else 'ru'
@@ -466,14 +440,14 @@ def get_active_subscription_text(user_id: int) -> str:
         return get_text(user_id, "no_active_subs")
     
     sub_names = {
-        "day": get_text(user_id, "sub_day") if "sub_day" in TEXTS[db.get_user(user_id)['language']] else "Дневная",
-        "week": "Недельная",
-        "month": "Месячная"
+        "day": "Денна",
+        "week": "Тижнева",
+        "month": "Місячна"
     }
-    end_date = datetime.strptime(sub['end_date'], '%Y-%m-%d %H:%M:%S.%f').strftime('%d.%m.%Y')
+    end_date = datetime.strptime(sub['end_date'], '%Y-%m-%d %H:%M:%S.%f').strftime('%d.%m.%Y %H:%M')
     remaining = sub['reports_limit'] - sub['reports_used']
     
-    return f"• {sub_names.get(sub['sub_type'], sub['sub_type'])}: до {end_date} ({remaining}/{sub['reports_limit']} сносов)"
+    return f"• {sub_names.get(sub['sub_type'], sub['sub_type'])}: до {end_date} ({remaining}/{sub['reports_limit']} сносів)"
 
 def extract_username(text: str) -> str:
     text = text.strip()
@@ -495,9 +469,9 @@ def is_valid_username(username: str) -> bool:
             return True
     return False
 
-# ==================== КЛАВИАТУРЫ ====================
 async def get_main_keyboard(user_id: int) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup([
+        [InlineKeyboardButton(get_text(user_id, "btn_start_report"), callback_data="action_start_report")],
         [InlineKeyboardButton(get_text(user_id, "btn_subscriptions"), callback_data="action_subscriptions")],
         [InlineKeyboardButton(get_text(user_id, "btn_extra_reports"), callback_data="action_extra_reports")],
         [InlineKeyboardButton(get_text(user_id, "btn_my_reports"), callback_data="action_my_reports")],
@@ -510,7 +484,7 @@ async def get_subscriptions_keyboard(user_id: int) -> InlineKeyboardMarkup:
     for sub_id, sub in SUBSCRIPTIONS.items():
         keyboard.append([
             InlineKeyboardButton(
-                f"{sub['emoji']} {sub['name']} - ${sub['price']} ({sub['reports']} сносов)",
+                f"{sub['emoji']} {sub['name']} - ${sub['price']} ({sub['reports']} сносів на 24 години)",
                 callback_data=f"buy_sub_{sub_id}"
             )
         ])
@@ -546,7 +520,6 @@ async def get_language_keyboard(user_id: int) -> InlineKeyboardMarkup:
         [InlineKeyboardButton(get_text(user_id, "btn_back"), callback_data="action_back_to_main")]
     ])
 
-# ==================== ОБРАБОТЧИКИ ====================
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     db.get_or_create_user(user.id, user.username, user.first_name, user.last_name)
@@ -566,7 +539,6 @@ async def admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ У вас нет доступа к админ-панели!")
         return
     
-    # Очищаем состояние админа
     context.user_data.pop("admin_waiting_user", None)
     context.user_data.pop("admin_waiting_reports", None)
     
@@ -591,7 +563,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     logger.info(f"Нажата кнопка: {data} от пользователя {user_id}")
     
-    # Смена языка
     if data == "action_language":
         await query.edit_message_text(
             "🌐 *Выберите язык:*",
@@ -610,12 +581,22 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
     
-    # Главное меню
     if data == "action_back_to_main":
         await query.edit_message_text(
             get_text(user_id, "start", query.from_user.first_name),
             parse_mode="Markdown",
             reply_markup=await get_main_keyboard(user_id)
+        )
+        return
+    
+    if data == "action_start_report":
+        context.user_data["awaiting_target"] = True
+        await query.edit_message_text(
+            get_text(user_id, "target_username"),
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton(get_text(user_id, "btn_back"), callback_data="action_back_to_main")]
+            ])
         )
         return
     
@@ -645,10 +626,10 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             history_text += "*Покупки:*\n"
             for p in purchases[:5]:
                 date = datetime.strptime(p['purchased_at'], '%Y-%m-%d %H:%M:%S.%f').strftime('%d.%m.%Y %H:%M')
-                history_text += f"• {p['item_name']} (+{p['reports_added']} сносов) - ${p['price']} ({date})\n"
+                history_text += f"• {p['item_name']} (+{p['reports_added']} сносів) - ${p['price']} ({date})\n"
         
         if usage:
-            history_text += "\n*Использование:*\n"
+            history_text += "\n*Використання:*\n"
             for u in usage[:5]:
                 date = datetime.strptime(u['used_at'], '%Y-%m-%d %H:%M:%S.%f').strftime('%d.%m.%Y %H:%M')
                 history_text += f"• Снос на @{u['target']} ({date})\n"
@@ -660,7 +641,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
     
-    # Подписки
     if data == "action_subscriptions":
         await query.edit_message_text(
             get_text(user_id, "buy_subscription"),
@@ -676,7 +656,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await create_payment_invoice(update, query, user_id, "subscription", sub_id, sub['price'])
         return
     
-    # Дополнительные сносы
     if data == "action_extra_reports":
         await query.edit_message_text(
             get_text(user_id, "buy_extra"),
@@ -692,7 +671,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await create_payment_invoice(update, query, user_id, "extra", extra_id, extra['price'])
         return
     
-    # Проверка платежа
     if data.startswith("check_payment_"):
         invoice_id = int(data.split("_")[2])
         session = db.get_payment_session(user_id)
@@ -706,10 +684,9 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if invoices and invoices.get('items'):
                 invoice = invoices['items'][0]
                 if invoice.get('status') == 'paid':
-                    # Активируем товар
                     if session['item_type'] == 'subscription':
                         sub = SUBSCRIPTIONS[session['item_key']]
-                        db.add_subscription(user_id, session['item_key'], sub['reports'], sub['duration_days'])
+                        db.add_subscription(user_id, session['item_key'], sub['reports'], sub['duration_hours'])
                         db.add_reports(user_id, sub['reports'], "subscription", sub['name'], session['amount'])
                         db.delete_payment_session(user_id)
                         
@@ -740,7 +717,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.answer(f"Ошибка: {str(e)}", show_alert=True)
         return
     
-    # Админ панель
     if data == "admin_exit":
         context.user_data.clear()
         await query.edit_message_text(
@@ -822,25 +798,19 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
     
-    # Использование сноса (из главного меню)
-    if data.startswith("use_report_"):
+    if data == "use_report_confirm":
         target = context.user_data.get("target_for_report")
         if not target:
-            context.user_data["awaiting_target"] = True
             await query.edit_message_text(
                 get_text(user_id, "target_username"),
-                parse_mode="Markdown",
-                reply_markup=InlineKeyboardMarkup([
-                    [InlineKeyboardButton(get_text(user_id, "btn_back"), callback_data="action_back_to_main")]
-                ])
+                parse_mode="Markdown"
             )
             return
         
-        # Используем снос
         if db.use_report(user_id, target):
             user = db.get_user(user_id)
             await query.edit_message_text(
-                get_text(user_id, "report_success", target, user['reports'], "Успешно!"),
+                get_text(user_id, "report_success", target, user['reports'], "Успішно!"),
                 parse_mode="Markdown",
                 reply_markup=await get_main_keyboard(user_id)
             )
@@ -869,7 +839,7 @@ async def create_payment_invoice(update, query, user_id: int, item_type: str, it
         db.save_payment_session(user_id, invoice_id, item_type, item_key, amount, 1800)
         
         keyboard = InlineKeyboardMarkup([
-            [InlineKeyboardButton("💳 ОПЛАТИТЬ", url=pay_url)],
+            [InlineKeyboardButton("💳 ОПЛАТИТИ", url=pay_url)],
             [InlineKeyboardButton(get_text(user_id, "check_payment"), callback_data=f"check_payment_{invoice_id}")],
             [InlineKeyboardButton(get_text(user_id, "btn_back"), callback_data="action_back_to_main")]
         ])
@@ -897,11 +867,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         update.effective_user.last_name
     )
     
-    # Админ режим - ожидание ID пользователя
     if context.user_data.get("admin_waiting_user"):
         user_input = text
         
-        # Ищем пользователя
         target_user = None
         try:
             target_id = int(user_input)
@@ -925,7 +893,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
     
-    # Админ режим - ожидание суммы
     if context.user_data.get("admin_waiting_reports"):
         try:
             new_reports = int(text)
@@ -938,7 +905,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             
             await update.message.reply_text(f"✅ Количество сносов изменено на {new_reports}")
             
-            # Очищаем состояние админа
             context.user_data.pop("admin_waiting_reports", None)
             context.user_data.pop("admin_target_user_id", None)
             
@@ -946,7 +912,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("❌ Введите корректное число!")
         return
     
-    # Ожидание цели для сноса
     if context.user_data.get("awaiting_target"):
         target = extract_username(text)
         
@@ -965,12 +930,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
         
         keyboard = InlineKeyboardMarkup([
-            [InlineKeyboardButton("✅ Подтвердить", callback_data="use_report_confirm")],
-            [InlineKeyboardButton("❌ Отмена", callback_data="action_back_to_main")]
+            [InlineKeyboardButton("✅ Підтвердити", callback_data="use_report_confirm")],
+            [InlineKeyboardButton("❌ Скасувати", callback_data="action_back_to_main")]
         ])
         
         context.user_data["target_for_report"] = target
-        context.user_data["awaiting_target"] = False
+        context.user_data.pop("awaiting_target", None)
         
         await update.message.reply_text(
             get_text(user_id, "confirm_report", target, user['reports'] - 1),
@@ -979,25 +944,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
     
-    # Если не в специальном режиме - показываем меню
     await update.message.reply_text(
         get_text(user_id, "start", update.effective_user.first_name),
         parse_mode="Markdown",
         reply_markup=await get_main_keyboard(user_id)
     )
 
-async def run_fake_reporting(user_id: int, target: str, claims_count: int, bot):
-    """Имитация процесса (для совместимости с старым кодом)"""
-    # Просто отправляем уведомление
-    await bot.send_message(
-        user_id,
-        f"✅ *Снос выполнен!*\n\n🎯 Цель: @{target}\n💥 Использовано: {claims_count} сносов",
-        parse_mode="Markdown"
-    )
-
-# ==================== ЗАПУСК ====================
 async def run_bot():
-    """Запуск бота"""
     try:
         application = Application.builder().token(BOT_TOKEN).build()
         
@@ -1019,7 +972,6 @@ async def run_bot():
         raise
 
 def main():
-    """Главная функция для Railway"""
     try:
         asyncio.run(run_bot())
     except KeyboardInterrupt:
