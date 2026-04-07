@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 # ==================== КОНФИГУРАЦИЯ ====================
 # Берем токены из переменных окружения Railway
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "8796055769:AAG1DRlpWd7Zft4oGb0_A8309qJgM3UOf3M")
-CRYPTO_PAY_TOKEN = os.environ.get("CRYPTO_PAY_TOKEN", "563453:AAcDIVnapZrmEIiNObyY5Y8VA2cC3FJUmRF")
+CRYPTO_PAY_TOKEN = os.environ.get("CRYPTO_PAY_TOKEN", "563714:AAoNQWxKCzZLDkotn5jjJdl0QFwMCAtEbtD")
 CRYPTO_PAY_TESTNET = False
 
 ADMIN_IDS = [964442694]
