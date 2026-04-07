@@ -4,6 +4,7 @@ import random
 import datetime
 import os
 import sys
+import json
 from datetime import datetime, timedelta
 from typing import Optional, Dict, List
 import aiohttp
@@ -28,23 +29,22 @@ CRYPTO_PAY_TESTNET = False
 
 ADMIN_IDS = [964442694]
 
+USERS_FILE = "users_list.json"
+
 SUBSCRIPTIONS = {
     "day": {
-        "name": "Денна підписка",
         "reports": 2,
         "duration_hours": 24,
         "price": 1.99,
         "emoji": "📅"
     },
     "week": {
-        "name": "Тижнева підписка", 
         "reports": 3,
         "duration_hours": 24,
         "price": 4.99,
         "emoji": "📆"
     },
     "month": {
-        "name": "Місячна підписка",
         "reports": 5,
         "duration_hours": 24,
         "price": 9.99,
@@ -54,13 +54,11 @@ SUBSCRIPTIONS = {
 
 EXTRA_REPORTS = {
     "single": {
-        "name": "1 снос",
         "reports": 1,
         "price": 2.00,
         "emoji": "🎯"
     },
     "five": {
-        "name": "5 сносів",
         "reports": 5,
         "price": 10.00,
         "emoji": "🔥"
@@ -97,6 +95,11 @@ TEXTS = {
         "payment_wait": "⏳ Ожидаем оплату...\nСчет действителен 30 минут.",
         "payment_error": "❌ Ошибка при создании счета: {}",
         "payment_not_found": "❌ Платеж не найден или еще не оплачен",
+        "sub_day": "Дневная подписка",
+        "sub_week": "Недельная подписка",
+        "sub_month": "Месячная подписка",
+        "extra_single": "1 снос",
+        "extra_five": "5 сносов"
     },
     "uk": {
         "start": "🔥 *Вітаю, {}!* 🔥\n\nЛаскаво просимо до сервісу сносів!\n\n👇 *Оберіть дію:*",
@@ -127,6 +130,11 @@ TEXTS = {
         "payment_wait": "⏳ Очікуємо оплату...\nРахунок дійсний 30 хвилин.",
         "payment_error": "❌ Помилка при створенні рахунку: {}",
         "payment_not_found": "❌ Платіж не знайдено або ще не оплачений",
+        "sub_day": "Денна підписка",
+        "sub_week": "Тижнева підписка",
+        "sub_month": "Місячна підписка",
+        "extra_single": "1 снос",
+        "extra_five": "5 сносів"
     },
     "en": {
         "start": "🔥 *Hello, {}!* 🔥\n\nWelcome to the report service!\n\n👇 *Choose an action:*",
@@ -157,8 +165,23 @@ TEXTS = {
         "payment_wait": "⏳ Waiting for payment...\nInvoice valid for 30 minutes.",
         "payment_error": "❌ Error creating invoice: {}",
         "payment_not_found": "❌ Payment not found or not paid yet",
+        "sub_day": "Daily subscription",
+        "sub_week": "Weekly subscription",
+        "sub_month": "Monthly subscription",
+        "extra_single": "1 report",
+        "extra_five": "5 reports"
     }
 }
+
+def load_users_list():
+    if os.path.exists(USERS_FILE):
+        with open(USERS_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    return {}
+
+def save_users_list(users):
+    with open(USERS_FILE, 'w', encoding='utf-8') as f:
+        json.dump(users, f, ensure_ascii=False, indent=2)
 
 class Database:
     def __init__(self, db_name: str = "users.db"):
@@ -172,14 +195,9 @@ class Database:
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS users (
                     user_id INTEGER PRIMARY KEY,
-                    username TEXT,
-                    first_name TEXT,
-                    last_name TEXT,
                     reports INTEGER DEFAULT 0,
                     total_purchased INTEGER DEFAULT 0,
                     total_used INTEGER DEFAULT 0,
-                    registered_at TIMESTAMP,
-                    status TEXT DEFAULT 'active',
                     language TEXT DEFAULT 'ru'
                 )
             """)
@@ -241,38 +259,29 @@ class Database:
             user = cursor.fetchone()
             return dict(user) if user else None
     
-    def get_user_by_username(self, username: str) -> Optional[dict]:
+    def get_all_users_data(self) -> List[dict]:
         with sqlite3.connect(self.db_name) as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
-            username = username.lstrip('@')
-            cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
-            user = cursor.fetchone()
-            return dict(user) if user else None
-    
-    def get_all_users(self) -> List[dict]:
-        with sqlite3.connect(self.db_name) as conn:
-            conn.row_factory = sqlite3.Row
-            cursor = conn.cursor()
-            cursor.execute("SELECT user_id, username, first_name, reports, total_purchased, total_used, language FROM users ORDER BY reports DESC")
+            cursor.execute("SELECT user_id, reports, total_purchased, total_used, language FROM users ORDER BY reports DESC")
             return [dict(row) for row in cursor.fetchall()]
     
-    def create_user(self, user_id: int, username: str = None, first_name: str = None, last_name: str = None, language: str = 'ru') -> dict:
+    def create_user(self, user_id: int, language: str = 'ru') -> dict:
         with sqlite3.connect(self.db_name) as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
             cursor.execute("""
-                INSERT INTO users (user_id, username, first_name, last_name, reports, registered_at, language)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (user_id, username, first_name, last_name, 0, datetime.now(), language))
+                INSERT INTO users (user_id, reports, language)
+                VALUES (?, ?, ?)
+            """, (user_id, 0, language))
             conn.commit()
             cursor.execute("SELECT * FROM users WHERE user_id = ?", (user_id,))
             return dict(cursor.fetchone())
     
-    def get_or_create_user(self, user_id: int, username: str = None, first_name: str = None, last_name: str = None) -> dict:
+    def get_or_create_user(self, user_id: int) -> dict:
         user = self.get_user(user_id)
         if not user:
-            user = self.create_user(user_id, username, first_name, last_name)
+            user = self.create_user(user_id)
             logger.info(f"Создан новый пользователь: {user_id}")
         return user
     
@@ -440,9 +449,9 @@ def get_active_subscription_text(user_id: int) -> str:
         return get_text(user_id, "no_active_subs")
     
     sub_names = {
-        "day": "Денна",
-        "week": "Тижнева",
-        "month": "Місячна"
+        "day": get_text(user_id, "sub_day"),
+        "week": get_text(user_id, "sub_week"),
+        "month": get_text(user_id, "sub_month")
     }
     end_date = datetime.strptime(sub['end_date'], '%Y-%m-%d %H:%M:%S.%f').strftime('%d.%m.%Y %H:%M')
     remaining = sub['reports_limit'] - sub['reports_used']
@@ -482,9 +491,10 @@ async def get_main_keyboard(user_id: int) -> InlineKeyboardMarkup:
 async def get_subscriptions_keyboard(user_id: int) -> InlineKeyboardMarkup:
     keyboard = []
     for sub_id, sub in SUBSCRIPTIONS.items():
+        sub_name = get_text(user_id, f"sub_{sub_id}")
         keyboard.append([
             InlineKeyboardButton(
-                f"{sub['emoji']} {sub['name']} - ${sub['price']} ({sub['reports']} сносів на 24 години)",
+                f"{sub['emoji']} {sub_name} - ${sub['price']} ({sub['reports']} сносів на 24 години)",
                 callback_data=f"buy_sub_{sub_id}"
             )
         ])
@@ -494,9 +504,10 @@ async def get_subscriptions_keyboard(user_id: int) -> InlineKeyboardMarkup:
 async def get_extra_reports_keyboard(user_id: int) -> InlineKeyboardMarkup:
     keyboard = []
     for rep_id, rep in EXTRA_REPORTS.items():
+        extra_name = get_text(user_id, f"extra_{rep_id}")
         keyboard.append([
             InlineKeyboardButton(
-                f"{rep['emoji']} {rep['name']} - ${rep['price']}",
+                f"{rep['emoji']} {extra_name} - ${rep['price']}",
                 callback_data=f"buy_extra_{rep_id}"
             )
         ])
@@ -522,14 +533,28 @@ async def get_language_keyboard(user_id: int) -> InlineKeyboardMarkup:
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
-    db.get_or_create_user(user.id, user.username, user.first_name, user.last_name)
+    user_id = user.id
     
-    text = get_text(user.id, "start", user.first_name)
+    db.get_or_create_user(user_id)
+    
+    users_list = load_users_list()
+    if str(user_id) not in users_list:
+        users_list[str(user_id)] = {
+            "id": user_id,
+            "username": user.username,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "joined_at": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        }
+        save_users_list(users_list)
+        logger.info(f"Пользователь {user_id} добавлен в список")
+    
+    text = get_text(user_id, "start", user.first_name or user.username or "User")
     
     await update.message.reply_text(
         text,
         parse_mode="Markdown",
-        reply_markup=await get_main_keyboard(user.id)
+        reply_markup=await get_main_keyboard(user_id)
     )
 
 async def admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -554,12 +579,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = query.from_user.id
     data = query.data
     
-    user = db.get_or_create_user(
-        user_id, 
-        query.from_user.username, 
-        query.from_user.first_name, 
-        query.from_user.last_name
-    )
+    user = db.get_or_create_user(user_id)
     
     logger.info(f"Нажата кнопка: {data} от пользователя {user_id}")
     
@@ -582,8 +602,9 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     
     if data == "action_back_to_main":
+        user_obj = query.from_user
         await query.edit_message_text(
-            get_text(user_id, "start", query.from_user.first_name),
+            get_text(user_id, "start", user_obj.first_name or user_obj.username or "User"),
             parse_mode="Markdown",
             reply_markup=await get_main_keyboard(user_id)
         )
@@ -686,25 +707,27 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 if invoice.get('status') == 'paid':
                     if session['item_type'] == 'subscription':
                         sub = SUBSCRIPTIONS[session['item_key']]
+                        sub_name = get_text(user_id, f"sub_{session['item_key']}")
                         db.add_subscription(user_id, session['item_key'], sub['reports'], sub['duration_hours'])
-                        db.add_reports(user_id, sub['reports'], "subscription", sub['name'], session['amount'])
+                        db.add_reports(user_id, sub['reports'], "subscription", sub_name, session['amount'])
                         db.delete_payment_session(user_id)
                         
                         await query.edit_message_text(
                             get_text(user_id, "purchase_success", 
-                                    sub['name'], sub['reports'], session['amount'], 
+                                    sub_name, sub['reports'], session['amount'], 
                                     db.get_user(user_id)['reports']),
                             parse_mode="Markdown",
                             reply_markup=await get_main_keyboard(user_id)
                         )
                     else:
                         extra = EXTRA_REPORTS[session['item_key']]
-                        db.add_reports(user_id, extra['reports'], "extra", extra['name'], session['amount'])
+                        extra_name = get_text(user_id, f"extra_{session['item_key']}")
+                        db.add_reports(user_id, extra['reports'], "extra", extra_name, session['amount'])
                         db.delete_payment_session(user_id)
                         
                         await query.edit_message_text(
                             get_text(user_id, "purchase_success",
-                                    extra['name'], extra['reports'], session['amount'],
+                                    extra_name, extra['reports'], session['amount'],
                                     db.get_user(user_id)['reports']),
                             parse_mode="Markdown",
                             reply_markup=await get_main_keyboard(user_id)
@@ -731,15 +754,19 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.edit_message_text("❌ Доступ запрещен!")
             return
         
-        users = db.get_all_users()
-        if not users:
+        users_list = load_users_list()
+        users_data = db.get_all_users_data()
+        
+        if not users_list:
             text = "📊 *Список пользователей*\n\nПользователей нет"
         else:
             text = "📊 *Список пользователей*\n\n"
-            for u in users[:20]:
-                name = u.get('username') or u.get('first_name') or str(u['user_id'])
-                text += f"• ID: `{u['user_id']}` | @{name} | 💥 {u['reports']} сносов\n"
-            text += f"\nВсего: {len(users)}"
+            for uid, u in list(users_list.items())[:20]:
+                name = u.get('username') or u.get('first_name') or str(uid)
+                user_data = next((x for x in users_data if str(x['user_id']) == uid), None)
+                reports = user_data['reports'] if user_data else 0
+                text += f"• ID: `{uid}` | @{name} | 💥 {reports} сносов\n"
+            text += f"\nВсего: {len(users_list)}"
         
         await query.edit_message_text(
             text,
@@ -755,14 +782,15 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.edit_message_text("❌ Доступ запрещен!")
             return
         
-        users = db.get_all_users()
-        total_reports = sum(u['reports'] for u in users)
-        total_purchased = sum(u['total_purchased'] for u in users)
-        total_used = sum(u['total_used'] for u in users)
+        users_data = db.get_all_users_data()
+        users_list = load_users_list()
+        total_reports = sum(u['reports'] for u in users_data)
+        total_purchased = sum(u['total_purchased'] for u in users_data)
+        total_used = sum(u['total_used'] for u in users_data)
         
         await query.edit_message_text(
             f"📈 *Статистика*\n\n"
-            f"👥 Пользователей: {len(users)}\n"
+            f"👥 Пользователей: {len(users_list)}\n"
             f"💥 Всего сносов: {total_reports}\n"
             f"📥 Куплено: {total_purchased}\n"
             f"📤 Использовано: {total_used}",
@@ -782,7 +810,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         await query.edit_message_text(
             "💰 *Изменение количества сносов*\n\n"
-            "Введите ID пользователя или @username:",
+            "Введите ID пользователя:",
             parse_mode="Markdown",
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton("🔙 Назад", callback_data="admin_back")]
@@ -860,37 +888,30 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     text = update.message.text.strip()
     
-    db.get_or_create_user(
-        user_id, 
-        update.effective_user.username, 
-        update.effective_user.first_name, 
-        update.effective_user.last_name
-    )
+    db.get_or_create_user(user_id)
     
     if context.user_data.get("admin_waiting_user"):
         user_input = text
         
-        target_user = None
         try:
             target_id = int(user_input)
             target_user = db.get_user(target_id)
+            
+            if not target_user:
+                await update.message.reply_text(f"❌ Пользователь с ID {target_id} не найден!")
+                return
+            
+            context.user_data["admin_target_user_id"] = target_id
+            context.user_data["admin_waiting_user"] = False
+            context.user_data["admin_waiting_reports"] = True
+            
+            await update.message.reply_text(
+                f"💰 Введите новое количество сносов для пользователя `{target_id}`:\n"
+                f"Текущее количество: {target_user['reports']}",
+                parse_mode="Markdown"
+            )
         except ValueError:
-            username = user_input.lstrip('@')
-            target_user = db.get_user_by_username(username)
-        
-        if not target_user:
-            await update.message.reply_text(f"❌ Пользователь не найден: {user_input}")
-            return
-        
-        context.user_data["admin_target_user_id"] = target_user['user_id']
-        context.user_data["admin_waiting_user"] = False
-        context.user_data["admin_waiting_reports"] = True
-        
-        await update.message.reply_text(
-            f"💰 Введите новое количество сносов для пользователя `{target_user['user_id']}`:\n"
-            f"Текущее количество: {target_user['reports']}",
-            parse_mode="Markdown"
-        )
+            await update.message.reply_text("❌ Введите корректный ID пользователя!")
         return
     
     if context.user_data.get("admin_waiting_reports"):
@@ -944,8 +965,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
     
+    user_obj = update.effective_user
     await update.message.reply_text(
-        get_text(user_id, "start", update.effective_user.first_name),
+        get_text(user_id, "start", user_obj.first_name or user_obj.username or "User"),
         parse_mode="Markdown",
         reply_markup=await get_main_keyboard(user_id)
     )
